@@ -97,3 +97,9 @@ to have the best result make sure your html template shows images in following f
 ```
 
 Feel free to modify to suit your needs.
+
+take  look on summernote basic sample [hello](https://github.com/summernote/summernote/blob/v0.7.0/examples/plugin-hello.html).
+
+#License
+
+The contents of this repository is licensed under [The MIT License.](https://opensource.org/licenses/MIT)
