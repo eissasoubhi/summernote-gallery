@@ -1,3 +1,4 @@
+/*author : <eissa.soubhi@gmail.com> */
 (function(factory)
 {
     /* global define */
