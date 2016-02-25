@@ -1,13 +1,13 @@
 # summernote-gallery
 summernote-gallery extension for [summernote](https://github.com/summernote/summernote/) wysiwyg, provides a bootstrap modal image gallery to select images already existe on server and add them to summernote editor with real path to server instead of using base64 encode.
 # Installing
-1. include extension file after summernote.min.js file
+- include extension file after summernote.min.js file
 
 ```html
 <script src="/js/summernote.min.js" type="text/javascript"></script>
 <script src="/js/summernote-gallery-extension.js" type="text/javascript"></script>
 ```
-2. add the gallery to summernote editor toolbar
+- add the gallery to summernote editor toolbar
 
 ```javascript
 $('#summernote').summernote({
@@ -63,7 +63,7 @@ modal button to add selected images to summernote editor
 
 Default : "Add"
 # HTML template
-to have the best result make sure your html template shows images in following form:
+to have the best result make sure your html template shows images in the following form:
 
 ```html
 <div class="row">
