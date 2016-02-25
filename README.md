@@ -35,6 +35,8 @@ to add options use onInit callback in that way :
 ```javascript 
 $(this).data('option', 'value'); 
 ```
+look at the above example.
+
 ## avaialable options
 ### 1. image_dialog_images_url : 
 url to html template containing images to add to the moadal body 
