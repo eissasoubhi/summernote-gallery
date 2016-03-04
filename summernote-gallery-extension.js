@@ -1,4 +1,3 @@
-/*author : <eissa.soubhi@gmail.com> */
 (function(factory)
 {
     /* global define */
@@ -51,7 +50,7 @@
                 });
 
                 // create jQuery object from button instance.
-                var $gallery = button.render();
+                $gallery = button.render();
                 return $gallery;
             });
 
@@ -60,6 +59,8 @@
                 // This will be called after modules are initialized.
                 'summernote.init': function(we, e)
                 {
+                    self.editable = context.layoutInfo.editable; //contentEditable element
+                    self.editor = this;
                     // get summernote onInit set parameters
                     self.image_dialog_images_url = $(this).data('image_dialog_images_url');
                     self.image_dialog_images_html = $(this).data('image_dialog_images_html');
@@ -82,7 +83,7 @@
                         }
                         else
                         {
-                            console.log("image_dialog_images_html or image_dialog_images_url must be set");
+                            console.error("options image_dialog_images_html or image_dialog_images_url must be set");
                         }
 
                     }
@@ -108,7 +109,7 @@
 
                         }).fail(function()
                         {
-                            console.log("error image_dialog_images_url");
+                            console.error("error loading from "+self.image_dialog_images_url);
                         })
                     }
 
@@ -120,13 +121,46 @@
                             $(this).toggleClass(self.select_class);
                         });
                     }
+                    // set the focus to the last focused element in the editor
+                    self.recoverEditorFocus = function ()
+                    {
+                        var last_focused_el = $(self.editor).data('last_focused_element');
+                        var editor = self.editable;
+                        var range = document.createRange();
+                        var sel = window.getSelection();
+                        var cursor_position =  last_focused_el.length;
 
+                        range.setStart(last_focused_el, cursor_position);
+                        range.collapse(true);
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                        editor.focus();
+                    }
+
+                    self.saveLastFocusedElement = function()
+                    {
+                        var focused_element = window.getSelection().focusNode;
+                        var parent = $(self.editable).get(0);
+                        if ($.contains(parent, focused_element))
+                        {
+                            $(self.editor).data('last_focused_element', focused_element)
+                            // console.info(focused_element);
+                        };
+                    }
+
+                    self.editorEvents = function () {
+                        $(self.editable).on('keypress, mousemove', function()
+                        {
+                            self.saveLastFocusedElement();
+                        })
+                    }
+                    self.editorEvents();
                     self.fillModal();
                 },
                 // This will be called when user releases a key on editable.
                 'summernote.keyup': function(we, e)
                 {
-                    // console.log('summernote keyup', we, e);
+                    self.saveLastFocusedElement();
                 }
             };
 
@@ -157,14 +191,17 @@
                 $modal.find("button#save").click(function(event)
                 {
                     var $selected_img = $modal.find('.img-item img.' + self.select_class);
+
+                    $modal.modal('hide')
+
+                    self.recoverEditorFocus();
+
                     $selected_img.each(function(index, el)
                     {
                         context.invoke('editor.pasteHTML',
                             '<img src="' + $(this).attr('src') + '" alt="' + ($(this).attr('alt') || "") + '" />');
                         $(this).removeClass(self.select_class)
                     });
-
-                    $modal.modal('hide')
                 });
                 // class to add to images when selected
                 this.select_class = "selected-img";
