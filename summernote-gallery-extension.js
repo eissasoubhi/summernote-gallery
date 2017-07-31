@@ -125,16 +125,19 @@
                     self.recoverEditorFocus = function ()
                     {
                         var last_focused_el = $(self.editor).data('last_focused_element');
-                        var editor = self.editable;
-                        var range = document.createRange();
-                        var sel = window.getSelection();
-                        var cursor_position =  last_focused_el.length;
+                        if(typeof last_focused_el !== "undefined")
+                        {
+                            var editor = self.editable;
+                            var range = document.createRange();
+                            var sel = window.getSelection();
+                            var cursor_position =  last_focused_el.length;
 
-                        range.setStart(last_focused_el, cursor_position);
-                        range.collapse(true);
-                        sel.removeAllRanges();
-                        sel.addRange(range);
-                        editor.focus();
+                            range.setStart(last_focused_el, cursor_position);
+                            range.collapse(true);
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                            editor.focus();
+                        }
                     }
 
                     self.saveLastFocusedElement = function()
