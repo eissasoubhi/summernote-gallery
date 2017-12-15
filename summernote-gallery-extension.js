@@ -182,9 +182,9 @@
                                             + '<button type="button" id="close" class="btn btn-default" data-dismiss="modal">Close</button>'
                                             + '<button type="button" id="save" class="btn btn-primary">Add</button>'
                                         + '</div>'
-                                    + '</div><!-- /.modal-content -->'
-                                + '</div><!-- /.modal-dialog -->'
-                            + '</div><!-- /.modal -->';
+                                    + '</div>'
+                                + '</div>'
+                            + '</div>';
             // This method will be called when editor is initialized by $('..').summernote();
             // You can create elements for plugin
             this.initialize = function()
