@@ -1,5 +1,5 @@
 # summernote-gallery
-summernote-gallery extension/plugin for [summernote](https://github.com/summernote/summernote/) wysiwyg, provides a bootstrap modal image gallery to select images already existe on server and add them to summernote editor with real path to server instead of using base64 encode.
+summernote-gallery extension/plugin for [summernote](https://github.com/summernote/summernote/) WYSIWYG, provides a bootstrap image-gallery modal to select images from the server and add them to the summernote editor with **the real path to the server** instead of using base64 encoding.
 
 **For a complete module with more user-friendly components. see [Summernote bricks](https://github.com/eissasoubhi/summernote-bricks)**
 
