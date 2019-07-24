@@ -166,13 +166,17 @@
                     self.saveLastFocusedElement();
                 }
             };
+            var bootsrap_version = parseInt($.fn.modal.Constructor.VERSION);
+            var header_content = [
+                '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>',
+                '<h4 class="modal-title">Image gallery</h4>'
+            ];
 
             self.modal_html = '<div class="modal fade" tabindex="-1" role="dialog">'
                                 + '<div class="modal-lg modal-dialog ">'
                                     + '<div class="modal-content">'
                                         + '<div class="modal-header">'
-                                            + '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>'
-                                            + '<h4 class="modal-title">Image gallery</h4>'
+                                            + (bootsrap_version == 3 ? header_content.join('') : header_content.reverse().join(''))
                                         + '</div>'
                                         + '<div class="modal-body">'
                                             + '<p class="text-danger" >no image was set. open the browser console to see if there is any errors messages. if not dig into source file to see what\'s wrong.</p>'
