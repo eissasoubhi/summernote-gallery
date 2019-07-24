@@ -4,9 +4,11 @@ summernote-gallery extension/plugin for [summernote](https://github.com/summerno
 **For a complete module with more user-friendly components. see [Summernote bricks](https://github.com/eissasoubhi/summernote-bricks)**
 
 # Installing
-- include extension file after summernote.min.js file
+- include fontawesome and the extension file after summernote.min.js file
 
 ```html
+<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" >
+
 <script src="/js/summernote.min.js" type="text/javascript"></script>
 <script src="/js/summernote-gallery-extension.js" type="text/javascript"></script>
 ```
