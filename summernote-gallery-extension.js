@@ -18,232 +18,260 @@
     }
 }(function($)
 {
+    var SummernoteGallery = CreateSummernoteGalleryClass();
 
-    // Extends plugins for adding gallery.
-    //  - plugin is external module for customizing.
-    $.extend($.summernote.plugins,
-    {
-        /**
-         * @param {Object} context - context object has status of editor.
-         */
-        'gallery': function(context)
-        {
-            var self = this;
+    var summernote_gallery = new SummernoteGallery({
+        name: 'gallery',
+        tooltip: 'Gallery',
+    });
 
-            // ui has renders to build ui elements.
-            //  - you can create a button with `ui.button`
-            var ui = $.summernote.ui;
+    // add the plugin to summenote
+    $.extend($.summernote.plugins, summernote_gallery.getPlugin());
 
-            // add gallery button
-            context.memo('button.gallery', function()
-            {
-                // create button
-                var button = ui.button(
-                {
-                    contents: '<i class="fa fa-file-image-o"></i>',
-                    tooltip: 'gallery',
-                    click: function()
+    function CreateSummernoteGalleryClass () {
+        function SummernoteGallery(options) {
+            this.options = $.extend({
+                name: 'summernote-gallery',
+                button_label: '<i class="fa fa-file-image-o"></i>',
+                tooltip: 'summernote gallery'
+            }, options);
+
+            this.plugin_default_options = {
+                'url': null,
+                'content': null,
+                'title': 'summernote image gallery',
+                'close_text': 'Close',
+                'ok_text': 'Add',
+            }
+
+            // class to add to images when selected
+            this.select_class = "selected-img";
+            this.modal_html = this.getModalTemplate();
+            this.$modal = $(this.modal_html).hide();
+        }
+
+        SummernoteGallery.prototype.getPlugin = function () {
+            var _this = this;
+            var plugin = {};
+
+            plugin[this.options.name] = function(context) {
+
+                // add gallery button
+                context.memo('button.' + _this.options.name, _this.createButton());
+
+                this.events = {
+                    'summernote.keyup': function(we, e)
                     {
-                        self.fillModal();
-                        self.$modal.modal();
+                        _this.saveLastFocusedElement();
                     }
-                });
+                };
 
-                // create jQuery object from button instance.
-                $gallery = button.render();
-                return $gallery;
+                this.initialize = function() {
+                    // entry
+                    _this.initGallery(context);
+                };
+            }
+
+            return plugin;
+        }
+
+        SummernoteGallery.prototype.fillModal = function() {
+            //fill modal with images whether from url or given html
+            if (typeof this.plugin_options.content !== "undefined")
+            {
+                this.setModalHtml(this.plugin_options.content)
+                this.attachContentEvents();
+            }
+            else if (typeof this.plugin_options.url !== "undefined")
+            {
+                var next = this.attachContentEvents;
+                this.getImagesFromUrl(next);
+            }
+            else
+            {
+                console.error("options 'content' or 'url' must be set");
+            }
+        }
+
+        SummernoteGallery.prototype.setModalHtml = function(html) {
+            // set variabl parts to modal html
+            this.$modal.find('.modal-title').html(this.plugin_options.title);
+            this.$modal.find('#close').html(this.plugin_options.close_text);
+            this.$modal.find('#save').html(this.plugin_options.ok_text);
+
+            this.$modal.find('.modal-body').html(html);
+        }
+
+        SummernoteGallery.prototype.getImagesFromUrl = function(callback) {
+            var _this = this;
+
+            // get images html from url
+            $.get(this.plugin_options.url, function(html)
+            {
+                _this.setModalHtml(html)
+                callback();
+
+            }).fail(function()
+            {
+                console.error("problem loading from "+_this.plugin_options.url);
+            })
+        }
+
+        // set the focus to the last focused element in the editor
+        SummernoteGallery.prototype.recoverEditorFocus = function () {
+            var last_focused_el = $(this.editor).data('last_focused_element');
+            if(typeof last_focused_el !== "undefined")
+            {
+                var editor = this.editable;
+                var range = document.createRange();
+                var sel = window.getSelection();
+                var cursor_position =  last_focused_el.length;
+
+                range.setStart(last_focused_el, cursor_position);
+                range.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(range);
+                editor.focus();
+            }
+        }
+
+        SummernoteGallery.prototype.saveLastFocusedElement = function() {
+            var focused_element = window.getSelection().focusNode;
+            var parent = $(this.editable).get(0);
+            if ($.contains(parent, focused_element))
+            {
+                $(this.editor).data('last_focused_element', focused_element)
+            };
+        }
+
+        SummernoteGallery.prototype.attachModalEvents = function() {
+            var $modal = this.$modal;
+            var _this = this;
+
+            // add selected images to summernote editor
+            $modal.find("button#save").click(function(event) {
+                var $selected_img = $modal.find('.img-item img.' + _this.select_class);
+
+                $modal.modal('hide')
+
+                _this.recoverEditorFocus();
+
+                $selected_img.each(function(index, el)
+                {
+                    _this.context.invoke('editor.pasteHTML',
+                        '<img src="' + $(this).attr('src') + '" alt="' + ($(this).attr('alt') || "") + '" />');
+                    $(this).removeClass(_this.select_class)
+                });
+            });
+        }
+
+        SummernoteGallery.prototype.attachEditorEvents = function () {
+            var _this = this;
+
+            $(this.editable).on('keypress, mousemove', function() {
+                _this.saveLastFocusedElement();
+            })
+        }
+
+        SummernoteGallery.prototype.attachContentEvents = function() {
+            var _this = this;
+
+            // images click event to select image
+            this.$modal.find('img').click(function(event)
+            {
+                $(this).toggleClass(_this.select_class);
+            });
+        }
+
+        SummernoteGallery.prototype.initGallery = function (context) {
+            this.context = context;
+            this.editor = this.context.layoutInfo.note;
+            this.editable = this.context.layoutInfo.editable; //contentEditable element
+            this.plugin_options = $.extend(this.plugin_default_options, this.context.options[this.options.name] || {});
+
+            this.attachModalEvents();
+            this.attachEditorEvents();
+            this.addStyleToDom();
+        }
+
+        SummernoteGallery.prototype.createButton = function() {
+            var _this = this;
+
+            var button = $.summernote.ui.button({
+                contents: this.options.button_label,
+                tooltip: this.options.tooltip,
+                click: function()
+                {
+                    _this.openGallery();
+                }
             });
 
-            // This events will be attached when editor is initialized.
-            this.events = {
-                // This will be called after modules are initialized.
-                'summernote.init': function(we, e)
-                {
-                    self.editable = context.layoutInfo.editable; //contentEditable element
-                    self.editor = this;
-                    // get summernote onInit set parameters
-                    self.image_dialog_images_url = $(this).data('image_dialog_images_url');
-                    self.image_dialog_images_html = $(this).data('image_dialog_images_html');
-                    self.image_dialog_title = $(this).data('image_dialog_title');
-                    self.image_dialog_close_btn_text = $(this).data('image_dialog_close_btn_text');
-                    self.image_dialog_ok_btn_text = $(this).data('image_dialog_ok_btn_text');
+            // create jQuery object from button instance.
+            $gallery = button.render();
+            return $gallery;
+        }
 
-                    self.fillModal = function()
-                    {
-                        //fill modal with images whether from url or given html
-                        if (typeof self.image_dialog_images_html !== "undefined")
-                        {
-                            self.setModalHtml(self.image_dialog_images_html)
-                            self.setEvents();
-                        }
-                        else if (typeof self.image_dialog_images_url !== "undefined")
-                        {
-                            var next = self.setEvents;
-                            self.getImagesFromUrl(next);
-                        }
-                        else
-                        {
-                            console.error("options image_dialog_images_html or image_dialog_images_url must be set");
-                        }
+        SummernoteGallery.prototype.addStyleToDom = function() {
+            // style to add to selected image
+            this.$css = $('<style>'
+                            +'.img-item{'
+                                +'position : relative;'
+                            +'}'
+                            +'.img-item .fa-check{'
+                                +'position : absolute;'
+                                +'top : -10px;'
+                                +'right : 5px;'
+                                +'font-size: 30px;'
+                                +'color: #337AB7;'
+                            +'}'
+                            +'.img-item .fa-check{'
+                                +'display : none;'
+                            +'}'
+                            +'.img-item .'+ this.select_class +' + .fa-check{'
+                                +'display : block;'
+                            +'}'
+                            +'.'+ this.select_class +'{'
+                                +'background-color: #5CB85C;'
+                            +'}'
+                        +'</style>');
+            this.$css.appendTo('body');
+        }
 
-                    }
-                    self.setModalHtml = function(html)
-                    {   // set variabl parts to modal html
-                        var title = self.image_dialog_title;
-                        var close = self.image_dialog_close_btn_text;
-                        var ok = self.image_dialog_ok_btn_text;
+        SummernoteGallery.prototype.getModalTemplate = function() {
 
-                        if (self.image_dialog_title !== "undefined") self.$modal.find('.modal-title').html(title);
-                        if (self.image_dialog_close_btn_text !== "undefined") self.$modal.find('#close').html(close);
-                        if (self.image_dialog_ok_btn_text !== "undefined") self.$modal.find('#save').html(ok);
-
-                        self.$modal.find('.modal-body').html(html);
-                    }
-                    self.getImagesFromUrl = function(callback)
-                    {
-                        // get images html from url
-                        $.get(self.image_dialog_images_url, function(html)
-                        {
-                            self.setModalHtml(html)
-                            callback();
-
-                        }).fail(function()
-                        {
-                            console.error("error loading from "+self.image_dialog_images_url);
-                        })
-                    }
-
-                    self.setEvents = function()
-                    {
-                        // images click event to select image
-                        self.$modal.find('img').click(function(event)
-                        {
-                            $(this).toggleClass(self.select_class);
-                        });
-                    }
-                    // set the focus to the last focused element in the editor
-                    self.recoverEditorFocus = function ()
-                    {
-                        var last_focused_el = $(self.editor).data('last_focused_element');
-                        if(typeof last_focused_el !== "undefined")
-                        {
-                            var editor = self.editable;
-                            var range = document.createRange();
-                            var sel = window.getSelection();
-                            var cursor_position =  last_focused_el.length;
-
-                            range.setStart(last_focused_el, cursor_position);
-                            range.collapse(true);
-                            sel.removeAllRanges();
-                            sel.addRange(range);
-                            editor.focus();
-                        }
-                    }
-
-                    self.saveLastFocusedElement = function()
-                    {
-                        var focused_element = window.getSelection().focusNode;
-                        var parent = $(self.editable).get(0);
-                        if ($.contains(parent, focused_element))
-                        {
-                            $(self.editor).data('last_focused_element', focused_element)
-                            // console.info(focused_element);
-                        };
-                    }
-
-                    self.editorEvents = function () {
-                        $(self.editable).on('keypress, mousemove', function()
-                        {
-                            self.saveLastFocusedElement();
-                        })
-                    }
-                    self.editorEvents();
-                    self.fillModal();
-                },
-                // This will be called when user releases a key on editable.
-                'summernote.keyup': function(we, e)
-                {
-                    self.saveLastFocusedElement();
-                }
-            };
             var bootsrap_version = parseInt($.fn.modal.Constructor.VERSION);
             var header_content = [
                 '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>',
-                '<h4 class="modal-title">Image gallery</h4>'
+                '<h4 class="modal-title">[gallery title]</h4>'
             ];
 
-            self.modal_html = '<div class="modal fade" tabindex="-1" role="dialog">'
-                                + '<div class="modal-lg modal-dialog ">'
-                                    + '<div class="modal-content">'
-                                        + '<div class="modal-header">'
-                                            + (bootsrap_version == 3 ? header_content.join('') : header_content.reverse().join(''))
-                                        + '</div>'
-                                        + '<div class="modal-body">'
-                                            + '<p class="text-danger" >no image was set. open the browser console to see if there is any errors messages. if not dig into source file to see what\'s wrong.</p>'
-                                            + '<small class="text-muted">Or open an issue on github</small>'
-                                        + '</div>'
-                                        + '<div class="modal-footer">'
-                                            + '<button type="button" id="close" class="btn btn-default" data-dismiss="modal">Close</button>'
-                                            + '<button type="button" id="save" class="btn btn-primary">Add</button>'
-                                        + '</div>'
-                                    + '</div>'
-                                + '</div>'
-                            + '</div>';
-            // This method will be called when editor is initialized by $('..').summernote();
-            // You can create elements for plugin
-            this.initialize = function()
-            {
-                var $modal = this.$modal = $(self.modal_html).hide();
-                // add selected images to summernote editor
-                $modal.find("button#save").click(function(event)
-                {
-                    var $selected_img = $modal.find('.img-item img.' + self.select_class);
+            var modal_html = ''+
+                '<div class="modal fade" tabindex="-1" role="dialog">'
+                    + '<div class="modal-lg modal-dialog ">'
+                        + '<div class="modal-content">'
+                            + '<div class="modal-header">'
+                                + (bootsrap_version == 3 ? header_content.join('') : header_content.reverse().join(''))
+                            + '</div>'
+                            + '<div class="modal-body">'
+                                + '<p class="text-danger" >no image was set. open the browser console to see if there is any errors messages. if not dig into source file to see what\'s wrong.</p>'
+                                + '<small class="text-muted"><a href="https://github.com/eissasoubhi/summernote-gallery/issues/new"> Or open an issue on github</a></small>'
+                            + '</div>'
+                            + '<div class="modal-footer">'
+                                + '<button type="button" id="close" class="btn btn-default" data-dismiss="modal">[Close]</button>'
+                                + '<button type="button" id="save" class="btn btn-primary">[Add]</button>'
+                            + '</div>'
+                        + '</div>'
+                    + '</div>'
+                + '</div>';
 
-                    $modal.modal('hide')
-
-                    self.recoverEditorFocus();
-
-                    $selected_img.each(function(index, el)
-                    {
-                        context.invoke('editor.pasteHTML',
-                            '<img src="' + $(this).attr('src') + '" alt="' + ($(this).attr('alt') || "") + '" />');
-                        $(this).removeClass(self.select_class)
-                    });
-                });
-                // class to add to images when selected
-                this.select_class = "selected-img";
-                // style to add to selected image
-                this.$css = $('<style>'
-                                +'.img-item{'
-                                    +'position : relative;'
-                                +'}'
-                                +'.img-item .fa-check{'
-                                    +'position : absolute;'
-                                    +'top : -10px;'
-                                    +'right : 5px;'
-                                    +'font-size: 30px;'
-                                    +'color: #337AB7;'
-                                +'}'
-                                +'.img-item .fa-check{'
-                                    +'display : none;'
-                                +'}'
-                                +'.img-item .'+ this.select_class +' + .fa-check{'
-                                    +'display : block;'
-                                +'}'
-                                +'.'+ this.select_class +'{'
-                                    +'background-color: #5CB85C;'
-                                +'}'
-                            +'</style>');
-                this.$css.appendTo('body');
-            };
-
-            // This methods will be called when editor is destroyed by $('..').summernote('destroy');
-            // You should remove elements on `initialize`.
-            this.destroy = function()
-            {
-                // this.$panel.remove();
-                // this.$panel = null;
-            };
+            return modal_html;
         }
-    });
+
+        SummernoteGallery.prototype.openGallery = function () {
+            this.fillModal();
+            this.$modal.modal();
+        }
+
+        return SummernoteGallery;
+    };
 }));
