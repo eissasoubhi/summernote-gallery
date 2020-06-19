@@ -18,8 +18,9 @@
     }
 }(function($)
 {
-    var SummernoteGallery = CreateSummernoteGalleryClass();
     var GalleryModal = CreateGalleryModalClass();
+    var SummernoteGallery = CreateSummernoteGalleryClass();
+    var GalleryDataManager = CreateGalleryDataManagerClass();
 
     var summernote_gallery = new SummernoteGallery({
         name: 'gallery',
@@ -28,6 +29,41 @@
 
     // add the plugin to summernote
     $.extend($.summernote.plugins, summernote_gallery.getPlugin());
+
+/************************************** GalleryDataManager ***************************************/
+function CreateGalleryDataManagerClass() {
+    function GalleryDataManager(options) {
+        this.options = $.extend({
+            url: null,
+            data: []
+        }, options);
+
+    }
+
+    GalleryDataManager.prototype.fetchData = function () {
+        var _this = this;
+
+        return new Promise(function (resolve, reject) {
+            if (_this.options.data.length) {
+
+                resolve(_this.options.data)
+
+            } else if (_this.options.url) {
+
+                $.get(_this.options.url, function(data) {
+                    resolve(data)
+                }).fail(function() {
+                    reject("problem loading from " + _this.options.url);
+                })
+
+            } else {
+                reject("options 'data' or 'url' must be set");
+            }
+        })
+    }
+
+    return GalleryDataManager;
+}
 
 /************************************** GalleryModal ***************************************/
     function CreateGalleryModalClass() {
@@ -91,6 +127,16 @@
             setTimeout(function () {
                 $message.html('');
             }, 5000);
+        }
+
+        GalleryModal.prototype.showLoading = function () {
+            console.log('show', this.$modal.find('.modal-footer .loading'))
+            this.$modal.find('.modal-footer .loading').show();
+        }
+
+        GalleryModal.prototype.hideLoading = function () {
+            console.log('hide', this.$modal.find('.modal-footer .loading'))
+            this.$modal.find('.modal-footer .loading').hide();
         }
 
         GalleryModal.prototype.on = function (event_name, closure) {
@@ -173,10 +219,13 @@
                                 + (bootsrap_version == 3 ? header_content.join('') : header_content.reverse().join(''))
                             + '</div>'
                             + '<div class="modal-body">'
-                                + '<p class="text-danger" >no image was set. open the browser console to see if there is any errors message. if not dig into source file to see what\'s wrong.</p>'
+                                + '<p class="text-danger" >no image was set. open the browser console to see if there is any errors. if not, dig into source file to see what\'s wrong.</p>'
                                 + '<small class="text-muted"><a target="_blank" href="https://github.com/eissasoubhi/summernote-gallery/issues/new"> Or open an issue on github</a></small>'
                             + '</div>'
                             + '<div class="modal-footer">'
+                                + '<span style="display: none;position: absolute;left: 10px;bottom: 10px;" class="loading" >'
+                                    + '<i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>'
+                                + '</span >'
                                 + '<span style="display: inline-block; margin-right: 50px;">'
                                     + '<button type="button" id="deselect-all" class="btn btn-default">[Deselect-all]</button>'
                                     + '<button type="button" id="select-all" class="btn btn-default">[select-all]</button>'
@@ -246,10 +295,7 @@
                 tooltip: 'summernote gallery'
             }, options);
 
-            this.plugin_default_options = {
-                url: null,
-                data: []
-            }
+            this.plugin_default_options = {}
         }
 
         SummernoteGallery.prototype.getPlugin = function () {
@@ -331,6 +377,7 @@
             this.plugin_options = $.extend(this.plugin_default_options, this.context.options[this.options.name] || {});
 
             this.modal = new GalleryModal(this.plugin_options.modal);
+            this.data_manager = new GalleryDataManager(this.plugin_options.source);
 
             this.attachModalEvents();
             this.attachEditorEvents();
@@ -368,25 +415,22 @@
             return $gallery;
         }
 
-        SummernoteGallery.prototype.fillModal = function() {
-            //fill modal with images whether from url or given html
-
-            if (this.plugin_options.data.length)
-            {
-                this.modal.setImages(this.plugin_options.data)
-            }
-            else if (this.plugin_options.url)
-            {
-                this.getImagesFromUrl();
-            }
-            else
-            {
-                console.error("options 'data' or 'url' must be set");
-            }
-        }
-
         SummernoteGallery.prototype.openGallery = function () {
-            this.fillModal();
+            var _this = this;
+
+            this.modal.showLoading();
+
+            this.data_manager.fetchData()
+            .then(function (data) {
+                _this.modal.setImages(data);
+            })
+            .catch(function (error) {
+                console.error(error);
+            })
+            .finally(function () {
+                _this.modal.hideLoading();
+            });
+
             this.modal.open();
         }
 
