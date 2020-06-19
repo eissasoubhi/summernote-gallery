@@ -32,7 +32,15 @@
 /************************************** GalleryModal ***************************************/
     function CreateGalleryModalClass() {
         function GalleryModal(options) {
-            this.options = options;
+            this.options = $.extend({
+                title: 'summernote image gallery',
+                close_text: 'Close',
+                ok_text: 'Add',
+                selectAll_text: 'Select all',
+                deselectAll_text: 'Deselect all',
+                noImageSelected_msg: 'One image at least must be selected.'
+            }, options);
+
             this.template = this.getModalTemplate();
             this.$modal = $(this.template).hide();
             this.events_queue = {};
@@ -48,10 +56,21 @@
             this.$modal.find('.modal-title').html(this.options.title);
             this.$modal.find('#close').html(this.options.close_text);
             this.$modal.find('#save').html(this.options.ok_text);
+            this.$modal.find('#select-all').html(this.options.selectAll_text);
+            this.$modal.find('#deselect-all').html(this.options.deselectAll_text);
 
             this.$modal.find('.modal-body').html(content);
 
             this.attachContentEvents();
+        }
+
+        GalleryModal.prototype.showError = function (message_text) {
+            var $message = this.$modal.find('.message');
+
+            $message.html('<span class="alert alert-danger">'+message_text+'</span>');
+            setTimeout(function () {
+                $message.html('');
+            }, 5000);
         }
 
         GalleryModal.prototype.on = function (event_name, closure) {
@@ -78,12 +97,16 @@
             $modal.find("button#save").click(function(event) {
                 var $selected_img = $modal.find('.img-item img.' + _this.select_class);
 
+                if (! $selected_img.length) {
+                    _this.showError(_this.options.noImageSelected_msg);
+                    return;
+                }
+
                 $modal.modal('hide')
 
                 _this.triggerEvent('beforeSave', [_this]);
 
-                $selected_img.each(function(index, el)
-                {
+                $selected_img.each(function(index, el) {
                     _this.triggerEvent('onSave', [_this, $(this)]);
 
                     $(this).removeClass(_this.select_class);
@@ -91,14 +114,21 @@
 
                 _this.triggerEvent('afterSave', [this]);
             });
+
+            $modal.find("button#select-all").click(function(event) {
+                $modal.find('img').addClass(_this.select_class);
+            });
+
+            $modal.find("button#deselect-all").click(function(event) {
+                $modal.find('img').removeClass(_this.select_class);
+            });
         }
 
         GalleryModal.prototype.attachContentEvents = function() {
             var _this = this;
 
             // images click event to select image
-            this.$modal.find('img').click(function(event)
-            {
+            this.$modal.find('img').click(function(event) {
                 $(this).toggleClass(_this.select_class);
             });
         }
@@ -116,19 +146,24 @@
             ];
 
             var modal_html = ''+
-                '<div class="modal fade" tabindex="-1" role="dialog">'
+                '<div class="modal summernote-gallery fade" tabindex="-1" role="dialog">'
                     + '<div class="modal-lg modal-dialog ">'
                         + '<div class="modal-content">'
                             + '<div class="modal-header">'
                                 + (bootsrap_version == 3 ? header_content.join('') : header_content.reverse().join(''))
                             + '</div>'
                             + '<div class="modal-body">'
-                                + '<p class="text-danger" >no image was set. open the browser console to see if there is any errors messages. if not dig into source file to see what\'s wrong.</p>'
+                                + '<p class="text-danger" >no image was set. open the browser console to see if there is any errors message. if not dig into source file to see what\'s wrong.</p>'
                                 + '<small class="text-muted"><a target="_blank" href="https://github.com/eissasoubhi/summernote-gallery/issues/new"> Or open an issue on github</a></small>'
                             + '</div>'
                             + '<div class="modal-footer">'
+                                + '<span style="display: inline-block; margin-right: 50px;">'
+                                    + '<button type="button" id="deselect-all" class="btn btn-default">[Deselect-all]</button>'
+                                    + '<button type="button" id="select-all" class="btn btn-default">[select-all]</button>'
+                                + '</span >'
                                 + '<button type="button" id="close" class="btn btn-default" data-dismiss="modal">[Close]</button>'
                                 + '<button type="button" id="save" class="btn btn-primary">[Add]</button>'
+                                + '<span class="message" ></span >'
                             + '</div>'
                         + '</div>'
                     + '</div>'
@@ -149,6 +184,14 @@
                                 +'right : 5px;'
                                 +'font-size: 30px;'
                                 +'color: #337AB7;'
+                            +'}'
+                            +'.modal.summernote-gallery .message{'
+                                +'display: block;'
+                                +'padding: 30px 0 20px 0;'
+                            +'}'
+                            +'.modal.summernote-gallery .message:empty{'
+                                +'display: block;'
+                                +'padding: 0px!important;'
                             +'}'
                             +'.img-item .fa-check{'
                                 +'display : none;'
@@ -176,11 +219,8 @@
             }, options);
 
             this.plugin_default_options = {
-                'url': null,
-                'content': null,
-                'title': 'summernote image gallery',
-                'close_text': 'Close',
-                'ok_text': 'Add',
+                url: null,
+                content: null
             }
         }
 
@@ -263,11 +303,7 @@
             this.editable = this.context.layoutInfo.editable; //contentEditable element
             this.plugin_options = $.extend(this.plugin_default_options, this.context.options[this.options.name] || {});
 
-            this.modal = new GalleryModal({
-                title: this.plugin_options.title,
-                close_text: this.plugin_options.close_text,
-                ok_text: this.plugin_options.ok_text
-            });
+            this.modal = new GalleryModal(this.plugin_options.modal);
 
             this.attachModalEvents();
             this.attachEditorEvents();
