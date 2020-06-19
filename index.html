@@ -17,6 +17,49 @@
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.js"></script>
     <script src="summernote-gallery-extension.js" type="text/javascript"></script>
     <script>
+        var data = [
+            {
+                "src": "https://picsum.photos/id/40/200/200",
+                "title": "a galerie test"
+            },
+            {
+                "src": "https://picsum.photos/id/50/200/200",
+                "title": "a galerie test"
+            },
+            {
+                "src": "https://picsum.photos/id/60/200/200",
+                "title": "a galerie test"
+            },
+            {
+                "src": "https://picsum.photos/id/70/200/200",
+                "title": "a galerie test"
+            },
+            {
+                "src": "https://picsum.photos/id/80/200/200",
+                "title": "a galerie test"
+            },
+            {
+                "src": "https://picsum.photos/id/90/200/200",
+                "title": "a galerie test"
+            },
+            {
+                "src": "https://picsum.photos/id/100/200/200",
+                "title": "a galerie test"
+            },
+            {
+                "src": "https://picsum.photos/id/10/200/200",
+                "title": "a galerie test"
+            },
+            {
+                "src": "https://picsum.photos/id/20/200/200",
+                "title": "a galerie test"
+            },
+            {
+                "src": "https://picsum.photos/id/30/200/200",
+                "title": "a galerie test"
+            }
+        ];
+
         $('#summernote').summernote({
             height: 800,
             toolbar: [
@@ -28,8 +71,8 @@
                 ['extensions', ['gallery']],
             ],
             gallery: {
-                // content: '<div class="row"> <div class="col-md-2 img-item"> <img class="col-md-12 thumbnail" src="https://picsum.photos/id/240/200/200" alt="a galerie test" /> <i class="fa fa-check"></i> </div> <div class="col-md-2 img-item"> <img class="col-md-12 thumbnail" src="https://picsum.photos/id/250/200/200" alt="a galerie test" /> <i class="fa fa-check"></i> </div> <div class="col-md-2 img-item"> <img class="col-md-12 thumbnail" src="https://picsum.photos/id/260/200/200" alt="a galerie test" /> <i class="fa fa-check"></i> </div> <div class="col-md-2 img-item"> <img class="col-md-12 thumbnail" src="https://picsum.photos/id/270/200/200" alt="a galerie test" /> <i class="fa fa-check"></i> </div> </div>',
-                url: 'server/content.html',
+                data: data,
+                // url: 'server/content.json',
                 modal: {
                     title: "La galerie d'images",
                     close_text: 'Fermer',

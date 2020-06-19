@@ -51,7 +51,7 @@
             this.attachEvents();
         }
 
-        GalleryModal.prototype.setContent = function(content) {
+        GalleryModal.prototype.setImages = function(data) {
             // set variabl parts to modal html
             this.$modal.find('.modal-title').html(this.options.title);
             this.$modal.find('#close').html(this.options.close_text);
@@ -59,9 +59,28 @@
             this.$modal.find('#select-all').html(this.options.selectAll_text);
             this.$modal.find('#deselect-all').html(this.options.deselectAll_text);
 
+            var content = this.createContent(data);
+
             this.$modal.find('.modal-body').html(content);
 
             this.attachContentEvents();
+        }
+
+        GalleryModal.prototype.createContent = function(data) {
+            var images = '<div class="row">';
+
+            for (var i = 0; i < data.length; i++) {
+                data[i]
+                images += ''
+                    +'<div class="col-md-2 img-item">'
+                        +'<img class="col-md-12 thumbnail" src="'+ data[i].src +'" alt="'+ data[i].title +'" />'
+                        +'<i class="fa fa-check"></i>'
+                    +'</div>';
+            }
+
+            images += '</div>';
+
+            return images;
         }
 
         GalleryModal.prototype.showError = function (message_text) {
@@ -209,6 +228,11 @@
         return GalleryModal;
     }
 
+
+
+
+
+
 /************************************** SummernoteGallery ***************************************/
     function CreateSummernoteGalleryClass () {
         function SummernoteGallery(options) {
@@ -220,7 +244,7 @@
 
             this.plugin_default_options = {
                 url: null,
-                content: null
+                data: []
             }
         }
 
@@ -252,12 +276,11 @@
         SummernoteGallery.prototype.getImagesFromUrl = function() {
             var _this = this;
 
-            $.get(this.plugin_options.url, function(content)
-            {
-                _this.modal.setContent(content)
+            $.get(this.plugin_options.url, function(data) {
+                _this.modal.setImages(data)
             }).fail(function()
             {
-                console.error("problem loading from "+_this.plugin_options.url);
+                console.error("problem loading from " + _this.plugin_options.url);
             })
         }
 
@@ -344,9 +367,9 @@
         SummernoteGallery.prototype.fillModal = function() {
             //fill modal with images whether from url or given html
 
-            if (this.plugin_options.content)
+            if (this.plugin_options.data.length)
             {
-                this.modal.setContent(this.plugin_options.content)
+                this.modal.setImages(this.plugin_options.data)
             }
             else if (this.plugin_options.url)
             {
@@ -354,7 +377,7 @@
             }
             else
             {
-                console.error("options 'content' or 'url' must be set");
+                console.error("options 'data' or 'url' must be set");
             }
         }
 
