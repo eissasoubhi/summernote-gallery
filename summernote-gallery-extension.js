@@ -33,6 +33,7 @@
     function CreateGalleryModalClass() {
         function GalleryModal(options) {
             this.options = $.extend({
+                maxHeight: 500,
                 title: 'summernote image gallery',
                 close_text: 'Close',
                 ok_text: 'Add',
@@ -53,6 +54,7 @@
 
         GalleryModal.prototype.setImages = function(data) {
             // set variabl parts to modal html
+            this.$modal.find('.modal-body').css('max-height', this.options.maxHeight);
             this.$modal.find('.modal-title').html(this.options.title);
             this.$modal.find('#close').html(this.options.close_text);
             this.$modal.find('#save').html(this.options.ok_text);
@@ -70,7 +72,6 @@
             var images = '<div class="row">';
 
             for (var i = 0; i < data.length; i++) {
-                data[i]
                 images += ''
                     +'<div class="col-md-2 img-item">'
                         +'<img class="col-md-12 thumbnail" src="'+ data[i].src +'" alt="'+ data[i].title +'" />'
@@ -211,6 +212,9 @@
                             +'.modal.summernote-gallery .message:empty{'
                                 +'display: block;'
                                 +'padding: 0px!important;'
+                            +'}'
+                            +'.modal.summernote-gallery .modal-body{'
+                                +'overflow: scroll;'
                             +'}'
                             +'.img-item .fa-check{'
                                 +'display : none;'
