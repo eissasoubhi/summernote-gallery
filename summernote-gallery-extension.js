@@ -179,7 +179,7 @@ function CreateGalleryDataManagerClass() {
                 ]);
             })
             .fail(function() {
-                _this.event.trigger('error', ["problem loading from " + url]);
+                _this.event.trigger('error', ["problem loading from " + current_link]);
             })
             .always(function () {
                 _this.event.trigger('afterFetch');
@@ -367,7 +367,7 @@ function CreateGalleryModalClass() {
 
     GalleryModal.prototype.clearContent = function() {
         // Reset the initial html
-        this.$modal.find('.images-list').html('<p class="col-md-12 text-muted" >Loading...</p>');
+        this.$modal.find('.images-list').html('');
     }
 
     // whether the images container has enough content to show the vertical scroll
@@ -395,7 +395,6 @@ function CreateGalleryModalClass() {
                         + '</div>'
                         + '<div class="modal-body">'
                             + '<div class="row images-list">'
-                                + '<p class="col-md-12 text-muted" >Loading...</p>'
                             + '</div>'
                         + '</div>'
                         + '<div class="modal-footer">'
@@ -542,7 +541,6 @@ function CreateSummernoteGalleryClass () {
         this.data_manager = new GalleryDataManager(this.plugin_options.source);
 
         this.attachModalEvents();
-        this.attachDataEvents();
         this.attachEditorEvents();
     }
 
@@ -616,6 +614,7 @@ function CreateSummernoteGalleryClass () {
     }
 
     SummernoteGallery.prototype.openGallery = function () {
+        this.attachDataEvents();
         this.data_manager.fetchData();
         this.modal.open();
     }
