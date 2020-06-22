@@ -1,18 +1,29 @@
-# summernote-gallery
-summernote-gallery extension/plugin for [summernote](https://github.com/summernote/summernote/) WYSIWYG, provides a bootstrap image-gallery modal to select images from the server and add them to the summernote editor with **the real path to the server** instead of using base64 encoding.
+
+# Summernote gallery
+summernote-gallery extension/plugin/module for [summernote](https://github.com/summernote/summernote/) WYSIWYG, provides a bootstrap image-gallery modal to select images from the server and add them to the summernote editor with **the real path to the server** instead of using base64 encoding.
 
 **For a complete module with more user-friendly components. see [Summernote bricks](https://github.com/eissasoubhi/summernote-bricks)**
 
+# Demo
+http://eissasoubhi.github.io/summernote-gallery
+
 # Installing
-- include fontawesome and the extension file after summernote.min.js file
+- Include the required files, and the module file after summernote.min.js file
 
 ```html
-<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" >
+<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" >
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css" rel="stylesheet">
 
-<script src="/js/summernote.min.js" type="text/javascript"></script>
-<script src="/js/summernote-gallery-extension.js" type="text/javascript"></script>
+<div id="summernote"></div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.js"></script>
+<!-- summernote-gallery -->
+<script src="summernote-gallery-extension.js" type="text/javascript"></script>
 ```
-- add the gallery to summernote editor toolbar
+- Add the gallery to the summernote editor toolbar
 
 ```javascript
 $('#summernote').summernote({
@@ -23,90 +34,62 @@ $('#summernote').summernote({
             // ['paragraph style', ['style', 'ol', 'ul', 'paragraph', 'height']],
             // ['misc', ['fullscreen', 'codeview', 'undo', 'redo', 'help']]
             ['extensions', ['gallery']],
-          ],
-        callbacks :{
-             onInit: function() {
-                // $(this).data('image_dialog_images_html', '<div class="row"..');
-                $(this).data('image_dialog_images_url', "mysite.com/url/to/html/gallery.php");
-                $(this).data('image_dialog_title', "La galerie d'images");
-                $(this).data('image_dialog_close_btn_text', "Fermer");
-                $(this).data('image_dialog_ok_btn_text', "Ajouter");
+        ],
+        gallery: {
+            source: {
+                // data: data,
+                url: 'http://eissasoubhi.github.io/summernote-gallery/server/example.json',
+                responseDataKey: 'data',
+                nextPageKey: 'links.next',
+            },
+            modal: {
+                loadOnScroll: true,
+                maxHeight: 300,
+                title: "La galerie d'images",
+                close_text: 'Fermer',
+                ok_text: 'Ajouter',
+                selectAll_text: 'Sélectionner Tout',
+                deselectAll_text: 'Désélectionner Tout',
+                noImageSelected_msg: 'No image was selected, please select one by clicking it!',
             }
         }
     });
 ```
+
+I used a json file `server/example.json` as the `source.url` just for the demo, for a practical example you can check out the PHP file `server/example.php`.
+
 # Options
-to add options use onInit callback in that way :
-```javascript 
-$(this).data('option', 'value'); 
-```
-look at the above example.
 
-## avaialable options
-### 1. image_dialog_images_url : 
-url to html template containing images to add to the moadal body 
+The module has two main options: `source` and `modal`:<br>
+The `source` option has sub-options that handle data and ajax requests.<br>
+The `modal` options has sub-options that deal with the bootsrap modal.<br>
 
-Default : none (required if image_dialog_images_html is not set)
 
-### 2. image_dialog_images_html : 
-html template containing images to add to the moadal body
+## Sub-options:
 
-Default : none (required if image_dialog_images_url is not set)
+| Option                    | description                                                                                                                                                                                                                                                                                                                                                                                                                                                           | default                              | type    | example                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| source                    | This option is the parent of the following options:                                                                                                                                                                                                                                                                                                                                                                                                                   |                                      | object  |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| source.data               | Array of objects with 'src' and 'title' properties                                                                                                                                                                                                                                                                                                                                                                                                                    | []                                   | array   | <pre><br>[{<br>    "src": "https://picsum.photos/id/40/200/200",<br>    "title": "a galerie test"<br>}, {<br>    "src": "https://picsum.photos/id/50/200/200",<br>    "title": "a galerie test"<br>}]<br></pre>                                                                                                                                                                                                                                                                                  |
+| source.url                | A full valid URL. the response of the URL must have `data` property that holds the data.<br> The data format is the same as the `source.data`'s. the `data` property name can be changed with the `source.responseDataKey` option.<br> If `modal.loadOnScroll` is set to true, in addition to `data`, the response is expected  to have `links.next` property for the next page URL, this property name can also be changed with the `source.nextPageKey` option.<br> | null                                 | string  | URL example: http://mywebsite.com/api/images?page=1  <br> Response example:<br> <pre><br>{<br>    "data": [{<br>        "src": "https://picsum.photos/id/40/200/200",<br>        "title": "a galerie test"<br>    }, {<br>        "src": "https://picsum.photos/id/50/200/200",<br>        "title": "a galerie test"<br>    }],<br>    "links": {<br>        "next": "http://mywebsite.com/api/images?page=2"<br>    }<br>}<br></pre>                                                            |
+| source.responseDataKey    | The property name that holds the data array from `source.url`.<br> For sub-properties, use dot notation, eg: `"data.key.subkey"`                                                                                                                                                                                                                                                                                                                                      | data                                 | string  | If the `source.responseDataKey` option value is `"data.items"`,<br> The `source.url` response is expected to be:  <pre><br>{<br>    "data": {<br>        "items": [{<br>            "src": "https://picsum.photos/id/40/200/200",<br>            "title": "a galerie test"<br>        }, {<br>            "src": "https://picsum.photos/id/50/200/200",<br>            "title": "a galerie test"<br>        }]<br>    },<br>    "links": {<br>        "next": "...."<br>    }<br>}<br></pre><br> |
+| source.nextPageKey        | The property name that holds the next page link from `source.url`.<br> For sub-properties, use dot notation, eg: `"data.key.subkey"`                                                                                                                                                                                                                                                                                                                                  | links.next                           | string  | If the `source.nextPageKey` option value is `"next_page"`,<br> the `source.url` response is expected to be:  <pre><br>{<br>    "data": [],<br>    "next_page": "http://mywebsite.com/api/images?page=2"<br>}<br></pre>                                                                                                                                                                                                                                                                           |
+| modal                     | This option is the parent of the following options:                                                                                                                                                                                                                                                                                                                                                                                                                   |                                      | object  |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| modal.loadOnScroll        | Reloads the next page data when the modal scroll is near to the bottom.<br> The module reloads the next page data using `source.nextPageKey` value to extract the next page  link from the last `source.url` response, that means when `modal.loadOnScroll` is set to true,  every request must provide the link to the next page, unless it's the last page, in that case,  the value of the next page link  has to be null or unset.                                | false                                | boolean | true                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| modal.maxHeight           | The modal body max height                                                                                                                                                                                                                                                                                                                                                                                                                                             | 500                                  | integer | 300                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| modal.title               | The modal title                                                                                                                                                                                                                                                                                                                                                                                                                                                       | summernote image gallery             | string  |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| modal.close_text          | The modal close button text                                                                                                                                                                                                                                                                                                                                                                                                                                           | Close                                | string  | Fermer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| modal.ok_text             | The modal save button text                                                                                                                                                                                                                                                                                                                                                                                                                                            | Add                                  | string  | Ajouter                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| modal.selectAll_text      | The modal select-all button text                                                                                                                                                                                                                                                                                                                                                                                                                                      | Select all                           | string  | Sélectionner Tout                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| modal.deselectAll_text    | The modal deselect-all button text                                                                                                                                                                                                                                                                                                                                                                                                                                    | Deselect all                         | string  | Désélectionner Tout                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| modal.noImageSelected_msg | The message error to display when no image is selected                                                                                                                                                                                                                                                                                                                                                                                                                | One image at least must be selected. | string  | No image was selected, please select one by clicking it!                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
-### 3. image_dialog_title : 
-modal title
+Feel free to modify the source file to suit your needs.
 
-Default : "Image gallery"
+# Contribution
+If you found any bugs or have suggestions, dont hesitate to throw it in the issues sections.
 
-### 4. image_dialog_close_btn_text : 
-modal close button
+For more undestanding of how this module works take a look on the V1 branch or the summernote extension basic sample [hello](https://github.com/summernote/summernote/blob/v0.7.0/examples/plugin-hello.html) .
 
-Default : "Close"
-
-### 5. image_dialog_ok_btn_text : 
-modal button to add selected images to summernote editor 
-
-Default : "Add"
-# HTML template
-to have the best result make sure your html template shows images in the following form:
-
-```html
-<div class="row">
-        <!-- ... -->
-        <div class="col-md-2 img-item">
-            <img class="col-md-12 thumbnail" src="website.com/url/to/image.jpg" alt="a galerie test" />
-            <i class="fa fa-check"></i>
-        </div>
-        <!-- ... -->
-</div>
-```
-### example template
-```html
-
-<div class="row">
-            <div class="col-md-2 img-item">
-                <img class="col-md-12 thumbnail" src="http://localhost:3030/storage/content/365/gallery/865b7acdbfc7a08a6c2d97350917da11.jpg" alt="a galerie test" />
-                <i class="fa fa-check"></i>
-            </div>
-            <div class="col-md-2 img-item">
-                <img class="col-md-12 thumbnail" src="http://localhost:3030/storage/content/365/gallery/9b952bb0c0d2771fcab06207e3a7e512.jpg" alt="a galerie test" />
-                <i class="fa fa-check"></i>
-            </div>
-            <div class="col-md-2 img-item">
-                <img class="col-md-12 thumbnail" src="http://localhost:3030/storage/content/365/gallery/bed271fd23cd9d4e49532fdef7ef05f6.jpg" alt="a galerie test" />
-                <i class="fa fa-check"></i>
-            </div>
-            <div class="col-md-2 img-item">
-                <img class="col-md-12 thumbnail" src="http://localhost:3030/storage/content/365/gallery/ec271099b2d93d8cadc671ed4ebc8ed3.jpg" alt="a galerie test" />
-                <i class="fa fa-check"></i>
-            </div>
-    </div>
-```
-
-Feel free to modify to suit your needs.
-
-take a look on the summernote extension basic sample [hello](https://github.com/summernote/summernote/blob/v0.7.0/examples/plugin-hello.html).
-
-#License
-
+# License
 The contents of this repository is licensed under [The MIT License.](https://opensource.org/licenses/MIT)
