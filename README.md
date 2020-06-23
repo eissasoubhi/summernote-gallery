@@ -1,7 +1,11 @@
+
 # summernote-gallery
 summernote-gallery extension/plugin for [summernote](https://github.com/summernote/summernote/) WYSIWYG, provides a bootstrap image-gallery modal to select images from the server and add them to the summernote editor with **the real path to the server** instead of using base64 encoding.
 
-**For a complete module with more user-friendly components. see [Summernote bricks](https://github.com/eissasoubhi/summernote-bricks)**
+**For a complete module with more user-friendly components. see [Summernote bricks](https://github.com/eissasoubhi/summernote-bricks)**<br>
+
+**You are on V1 branch, see the last version on [master branch ](https://github.com/eissasoubhi/summernote-gallery/tree/master)**
+
 
 # Installing
 - include fontawesome and the extension file after summernote.min.js file
@@ -107,6 +111,6 @@ Feel free to modify to suit your needs.
 
 take a look on the summernote extension basic sample [hello](https://github.com/summernote/summernote/blob/v0.7.0/examples/plugin-hello.html).
 
-#License
+# License
 
 The contents of this repository is licensed under [The MIT License.](https://opensource.org/licenses/MIT)
