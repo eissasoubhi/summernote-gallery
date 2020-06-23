@@ -5,7 +5,11 @@ summernote-gallery extension/plugin/module for [summernote](https://github.com/s
 **For a complete module with more user-friendly components. see [Summernote bricks](https://github.com/eissasoubhi/summernote-bricks)**
 
 # Demo
-http://eissasoubhi.github.io/summernote-gallery
+
+Demo link:
+http://eissasoubhi.github.io/summernote-gallery <br><br>
+
+![Summernote gallery demo](demo.gif?raw=true "Summernote gallery demo")
 
 # Installing
 - Include the required files, and the module file after summernote.min.js file
@@ -62,7 +66,7 @@ I used a json file `server/example.json` as the `source.url` just for the demo, 
 
 The module has two main options: `source` and `modal`:<br>
 The `source` option has sub-options that handle data and ajax requests.<br>
-The `modal` options has sub-options that deal with the bootsrap modal.<br>
+The `modal` option has sub-options that deal with the bootsrap modal.<br>
 
 
 ## Sub-options:
@@ -89,7 +93,7 @@ Feel free to modify the source file to suit your needs.
 # Contribution
 If you found any bugs or have suggestions, dont hesitate to throw it in the issues sections.
 
-For more undestanding of how this module works take a look on the V1 branch or the summernote extension basic sample [hello](https://github.com/summernote/summernote/blob/v0.7.0/examples/plugin-hello.html) .
+For more undestanding of how this module works take a look on the [v1](https://github.com/eissasoubhi/summernote-gallery/tree/v1) branch or the summernote extension basic sample [hello](https://github.com/summernote/summernote/blob/v0.7.0/examples/plugin-hello.html) .
 
 # License
 The contents of this repository is licensed under [The MIT License.](https://opensource.org/licenses/MIT)
