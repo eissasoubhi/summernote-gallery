@@ -22,48 +22,49 @@
     var GalleryModal = CreateGalleryModalClass();
     var SummernoteGallery = CreateSummernoteGalleryClass();
     var GalleryDataManager = CreateGalleryDataManagerClass();
+    var GalleryPlugin = CreateGalleryPluginClass();
 
-    var summernote_gallery = new SummernoteGallery({
+    var gallery_plugin = new GalleryPlugin({
         name: 'gallery',
         tooltip: 'Gallery',
     });
 
     // add the plugin to summernote
-    $.extend($.summernote.plugins, summernote_gallery.getPlugin());
+    $.extend($.summernote.plugins, gallery_plugin.getPlugin());
 
 /************************************** EventManager ***************************************/
 function CreateEventManagerClass() {
     function EventManager() {
         // events store
         this.events_queue = {};
+    }
 
-        // Register an event
-        EventManager.prototype.on = function (event_name, closure) {
-            if (! Array.isArray(this.events_queue[event_name]) ) {
-                this.events_queue[event_name] = [];
-            }
-
-            this.events_queue[event_name].push(closure);
-
-            return this;
+    // Register an event
+    EventManager.prototype.on = function (event_name, closure) {
+        if (! Array.isArray(this.events_queue[event_name]) ) {
+            this.events_queue[event_name] = [];
         }
 
-        // Fire an event
-        EventManager.prototype.trigger = function (event_name, params) {
-            var events = this.events_queue[event_name] || [];
+        this.events_queue[event_name].push(closure);
 
-            for (var i = 0; i < events.length; i++) {
-                events[i].apply(this, params);
-            }
+        return this;
+    }
 
-            return this;
+    // Fire an event
+    EventManager.prototype.trigger = function (event_name, params) {
+        var events = this.events_queue[event_name] || [];
+
+        for (var i = 0; i < events.length; i++) {
+            events[i].apply(this, params);
         }
 
-        EventManager.prototype.clearAll = function () {
-            this.events_queue = {};
+        return this;
+    }
 
-            return this;
-        }
+    EventManager.prototype.clearAll = function () {
+        this.events_queue = {};
+
+        return this;
     }
 
     return EventManager;
@@ -469,30 +470,6 @@ function CreateSummernoteGalleryClass () {
         this.plugin_default_options = {}
     }
 
-    SummernoteGallery.prototype.getPlugin = function () {
-        var _this = this;
-        var plugin = {};
-
-        plugin[this.options.name] = function(context) {
-
-            // add gallery button
-            context.memo('button.' + _this.options.name, _this.createButton());
-
-            this.events = {
-                'summernote.keyup': function(we, e)
-                {
-                    _this.saveLastFocusedElement();
-                }
-            };
-
-            this.initialize = function() {
-                _this.initGallery(context);
-            };
-        }
-
-        return plugin;
-    }
-
     // set the focus to the last focused element in the editor
     SummernoteGallery.prototype.recoverEditorFocus = function () {
         var last_focused_el = $(this.editor).data('last_focused_element');
@@ -620,5 +597,39 @@ function CreateSummernoteGalleryClass () {
     }
 
     return SummernoteGallery;
+}
+
+/************************************** GalleryPlugin ***************************************/
+function CreateGalleryPluginClass () {
+    function GalleryPlugin(options) {
+        this.options = options;
+    }
+
+    GalleryPlugin.prototype.getPlugin = function () {
+        var plugin = {};
+        var _this = this;
+
+        plugin[this.options.name] = function(context) {
+            var summernote_gallery = new SummernoteGallery(_this.options);
+
+            // add gallery button
+            context.memo('button.' + summernote_gallery.options.name, summernote_gallery.createButton());
+
+            this.events = {
+                'summernote.keyup': function(we, e)
+                {
+                    summernote_gallery.saveLastFocusedElement();
+                }
+            };
+
+            this.initialize = function() {
+                summernote_gallery.initGallery(context);
+            };
+        }
+
+        return plugin;
+    }
+
+    return GalleryPlugin;
 }
 }));
