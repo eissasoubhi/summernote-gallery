@@ -87,6 +87,10 @@ function CreateGalleryDataManagerClass() {
             nextPageKey: 'links.next',
         }, options);
 
+        this.init();
+    }
+
+    GalleryDataManager.prototype.init = function (response) {
         this.current_page = 0;
         this.is_fetching_locked = false;
         this.event = new EventManager();
@@ -543,7 +547,7 @@ function CreateSummernoteGalleryClass () {
         });
 
         this.modal.event.on('close', function (gallery_modal) {
-            _this.data_manager.event.clearAll();
+            _this.data_manager.init();
             _this.modal.clearContent();
         });
     }
