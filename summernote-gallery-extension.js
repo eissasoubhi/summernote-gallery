@@ -280,6 +280,7 @@ function CreateGalleryModalClass() {
             $image = $('<img class="col-md-12 thumbnail" title="'+ data[i].title +'"/>');
 
             $image.get(0).onload = function(){
+                $(this).siblings('.loading').hide()
                 $(this).click(function(event) {
                     $(this).toggleClass(_this.select_class);
                 });
@@ -289,6 +290,9 @@ function CreateGalleryModalClass() {
 
             var $item = $('<div class="col-md-2 img-item">'
                             +'<i class="fa fa-check"></i>'
+                            +'<span class="loading">'
+                                +'<i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>'
+                            +'</span>'
                         +'</div>');
 
             $item.prepend($image);
@@ -432,6 +436,24 @@ function CreateGalleryModalClass() {
                             +'right : 5px;'
                             +'font-size: 30px;'
                             +'color: #337AB7;'
+                        +'}'
+                        +'.img-item{'
+                            // +'min-height : 119.66px;'
+                        +'}'
+                        +'.img-item .thumbnail{'
+                            +'min-height : 119.66px;'
+                        +'}'
+                        +'.img-item .loading{'
+                            +'position: absolute;'
+                            +'margin: auto;'
+                            +'top: -20px;'
+                            +'bottom: 0;'
+                            +'display: block;'
+                            +'left: 0;'
+                            +'right: 0;'
+                            +'width: 60px;'
+                            +'height: 42px;'
+                            +'text-align: center;'
                         +'}'
                         +'.modal.summernote-gallery .message{'
                             +'display: block;'
