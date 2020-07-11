@@ -1,4 +1,5 @@
 
+
 # Summernote gallery
 summernote-gallery extension/plugin/module for [summernote](https://github.com/summernote/summernote/) WYSIWYG, provides a bootstrap image-gallery modal to select images from the server and add them to the summernote editor with **the real path to the server** instead of using base64 encoding.
 
@@ -25,7 +26,7 @@ http://eissasoubhi.github.io/summernote-gallery <br><br>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.js"></script>
 <!-- summernote-gallery -->
-<script src="summernote-gallery-extension.js" type="text/javascript"></script>
+<script src="dist/summernote-gallery.min.js" type="text/javascript"></script>
 ```
 - Add the gallery to the summernote editor toolbar
 
@@ -41,7 +42,7 @@ $('#summernote').summernote({
         ],
         gallery: {
             source: {
-                // data: data,
+                // data: [],
                 url: 'http://eissasoubhi.github.io/summernote-gallery/server/example.json',
                 responseDataKey: 'data',
                 nextPageKey: 'links.next',
@@ -90,7 +91,15 @@ The `modal` option has sub-options that deal with the bootsrap modal.<br>
 
 Feel free to modify the source file to suit your needs.
 
-# Contribution
+# Contribution || Edit
+
+To run the plugin on local, head to the project root folder and run:
+1. `npm install`
+2. `npm run start` to start the project on 127.0.0.1:9090
+3. `npm run dev` to start the webpack watch mode
+4. Edit plugin files in the `/src` folder 
+5. `npm run build` to generate the build in `/dist` folder
+
 If you found any bugs or have suggestions, dont hesitate to throw it in the issues sections.
 
 For more undestanding of how this module works take a look on the [v1](https://github.com/eissasoubhi/summernote-gallery/tree/v1) branch or the summernote extension basic sample [hello](https://github.com/summernote/summernote/blob/v0.7.0/examples/plugin-hello.html) .
