@@ -1,0 +1,32 @@
+{
+  "name": "summernote-gallery",
+  "version": "2.0.0",
+  "description": "summernote gallery module, provides a bootstrap modal image gallery to select images from a server.",
+  "main": "dist/summernote-gallery.min.js",
+  "keywords": [
+    "summernote gallery",
+    "summernote module",
+    "summernote plugin"
+  ],
+  "homepage": "https://eissasoubhi.github.io/summernote-gallery",
+  "bugs": "https://github.com/eissasoubhi/summernote-gallery/issues",
+  "repository": "https://github.com/eissasoubhi/summernote-gallery",
+  "devDependencies": {
+    "@babel/cli": "^7.10.1",
+    "@babel/core": "^7.10.2",
+    "@babel/plugin-proposal-class-properties": "^7.10.1",
+    "@babel/plugin-proposal-private-methods": "^7.10.1",
+    "@babel/preset-env": "^7.10.2",
+    "babel-loader": "^8.1.0",
+    "http-serve": "^1.0.1",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11"
+  },
+  "scripts": {
+    "start": "node node_modules/http-serve/bin/http-serve -a 127.0.0.1 -p 9090",
+    "build": "webpack --mode=production",
+    "dev": "webpack --mode development --watch"
+  },
+  "author": "Eissa Soubhi <eissa.soubhi@gmail.com> (http://eissa-soubhi.com/)",
+  "license": "MIT"
+}
