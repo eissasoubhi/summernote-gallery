@@ -33,14 +33,14 @@ http://eissasoubhi.github.io/summernote-gallery <br><br>
 ```javascript
 $('#summernote').summernote({
         toolbar: [
-            // ['insert', ['picture', 'link', 'video', 'table', 'hr', 'gallery']],
+            // ['insert', ['picture', 'link', 'video', 'table', 'hr', 'summernoteGallery']],
             // ['font style', ['fontname', 'fontsize', 'color', 'bold', 'italic', 
             //'underline', 'strikethrough', 'superscript', 'subscript', 'clear']],
             // ['paragraph style', ['style', 'ol', 'ul', 'paragraph', 'height']],
             // ['misc', ['fullscreen', 'codeview', 'undo', 'redo', 'help']]
-            ['extensions', ['gallery']],
+            ['extensions', ['summernoteGallery']],
         ],
-        gallery: {
+        summernoteGallery: {
             source: {
                 // data: [],
                 url: 'http://eissasoubhi.github.io/summernote-gallery/server/example.json',
@@ -56,6 +56,7 @@ $('#summernote').summernote({
                 selectAll_text: 'Sélectionner Tout',
                 deselectAll_text: 'Désélectionner Tout',
                 noImageSelected_msg: 'No image was selected, please select one by clicking it!',
+                buttonLabel: '<i class="fa fa-file-image-o"></i> Gallery'
             }
         }
     });
@@ -88,6 +89,7 @@ The `modal` option has sub-options that deal with the bootsrap modal.<br>
 | modal.selectAll_text      | The modal select-all button text                                                                                                                                                                                                                                                                                                                                                                                                                                      | Select all                           | string  | Sélectionner Tout                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | modal.deselectAll_text    | The modal deselect-all button text                                                                                                                                                                                                                                                                                                                                                                                                                                    | Deselect all                         | string  | Désélectionner Tout                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | modal.noImageSelected_msg | The message error to display when no image is selected                                                                                                                                                                                                                                                                                                                                                                                                                | One image at least must be selected. | string  | No image was selected, please select one by clicking it!                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| buttonLabel | The text displayed on the plugin button, it accepts HTML                                                                                                                                                                                                                                                                                                                                                                                                                | <i class="fa fa-file-image-o"></i> SN Gallery | string  | My <strong>Button</strong>                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 Feel free to modify the source file to suit your needs.
 

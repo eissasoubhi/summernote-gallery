@@ -1,16 +1,13 @@
-import EventManager from './EventManager'
 import GalleryModal from './GalleryModal'
 import DataManager from './DataManager'
 
 export default class SummernoteGallery {
     constructor(options) {
         this.options = $.extend({
-            name: 'summernote-gallery',
-            button_label: '<i class="fa fa-file-image-o"></i>',
+            name: 'summernoteGallery',
+            buttonLabel: '<i class="fa fa-file-image-o"></i> SN Gallery',
             tooltip: 'summernote gallery'
         }, options);
-
-        this.event = new EventManager();
 
         this.plugin_default_options = {}
     }
@@ -55,7 +52,7 @@ export default class SummernoteGallery {
         this.plugin_options = $.extend(
             this.plugin_default_options,
             this.context.options[this.options.name] || {}
-        );
+        )
 
         this.modal = new GalleryModal(this.plugin_options.modal);
         this.data_manager = new DataManager(this.plugin_options.source);
@@ -95,7 +92,8 @@ export default class SummernoteGallery {
         var _this = this;
 
         var button = $.summernote.ui.button({
-            contents: this.options.button_label,
+            className: 'w-100',
+            contents: this.options.buttonLabel,
             tooltip: this.options.tooltip,
             click: function() {
                 _this.openGallery();

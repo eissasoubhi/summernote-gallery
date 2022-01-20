@@ -23,7 +23,7 @@
     "webpack-cli": "^3.3.11"
   },
   "scripts": {
-    "start": "node node_modules/http-serve/bin/http-serve -a 127.0.0.1 -p 9090",
+    "start": "node node_modules/http-serve/bin/http-serve -a 127.0.0.1 -p 9091",
     "build": "webpack --mode=production",
     "dev": "webpack --mode development --watch"
   },

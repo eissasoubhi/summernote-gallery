@@ -153,14 +153,14 @@
         $('#summernote').summernote({
             height: 500,
             toolbar: [
-                ['insert', ['picture', 'link', 'video', 'table', 'hr', 'gallery']],
+                ['insert', ['picture', 'link', 'video', 'table', 'hr', 'summernoteGallery']],
                 ['font style', ['fontname', 'fontsize', 'color', 'bold', 'italic',
                 'underline', 'strikethrough', 'superscript', 'subscript', 'clear']],
                 ['paragraph style', ['style', 'ol', 'ul', 'paragraph', 'height']],
                 ['misc', ['fullscreen', 'codeview', 'undo', 'redo', 'help']]
-                ['extensions', ['gallery']],
+                ['extensions', ['summernoteGallery']],
             ],
-            gallery: {
+            summernoteGallery: {
                 source: {
                     // data: data,
                     url: location.origin+location.pathname+'/server/example.json',
@@ -170,7 +170,8 @@
                 modal: {
                     loadOnScroll: true,
                     noImageSelected_msg: 'No image was selected, please select one by clicking it!',
-                }
+                },
+                buttonLabel: '<i class="fa fa-file-image-o"></i> SN Gallery'
             }
         });
     </script>
