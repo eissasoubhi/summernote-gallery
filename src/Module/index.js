@@ -27,7 +27,6 @@ export default class GalleryPlugin {
             };
 
             this.initialize = function() {
-                console.log('initialize')
                 _this.summernote_gallery.initGallery(context);
             };
         }

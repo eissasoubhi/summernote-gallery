@@ -55,25 +55,24 @@ export default class GalleryModal {
     // append images to the modal with data object
     addImages(data, page) {
 
-        var page_images = this.createImages(data, page);
+        var $page_images = this.createImages(data, page);
         var $images_list = this.$modal.find('.images-list');
 
         if ($images_list.find('.img-item').length) {
-            this.$modal.find('.images-list').append(page_images);
+            this.$modal.find('.images-list').append($page_images);
         } else {
-            this.$modal.find('.images-list').html(page_images);
+            this.$modal.find('.images-list').html($page_images);
         }
     }
 
     // generate image elements from data object
     createImages(data, page) {
-        var attributes = page ? 'class="page-content" data-page"' + page + '"' : '';
-        var $content = $('<div ' + attributes + '></div>');
         var _this = this;
+        let content = []
 
         for (var i = 0; i < data.length; i++) {
 
-            var $image = $('<img class="col-md-12 thumbnail" title="'+ data[i].title +'"/>');
+            var $image = $('<img class="img-thumbnail sng-image" title="'+ data[i].title +'" data-page="' + page + '"/>');
 
             $image.get(0).onload = function() {
                 $(this).siblings('.loading').hide()
@@ -84,7 +83,7 @@ export default class GalleryModal {
 
             $image.attr('src', data[i].src);
 
-            var $item = $('<div class="col-md-2 img-item">'
+            var $item = $('<div class="col-md-2 mb-4 img-item">'
                             +'<i class="fa fa-check"></i>'
                             +'<span class="loading">'
                                 +'<i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>'
@@ -92,10 +91,10 @@ export default class GalleryModal {
                         +'</div>');
 
             $item.prepend($image);
-            $content.append($item)
+            content.push($item)
         }
 
-        return $content;
+        return content;
     }
 
     showError(message_text, permanent) {
@@ -233,8 +232,8 @@ export default class GalleryModal {
                             +'font-size: 30px;'
                             +'color: #337AB7;'
                         +'}'
-                        +'.img-item .thumbnail{'
-                            +'min-height : 119.66px;'
+                        +'.img-item .sng-image{'
+                            /*+'min-height : 119.66px;'*/
                         +'}'
                         +'.img-item .loading{'
                             +'position: absolute;'
