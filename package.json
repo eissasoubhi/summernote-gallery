@@ -1,6 +1,6 @@
 {
   "name": "summernote-gallery",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "summernote gallery module, provides a bootstrap modal image gallery to select images from a server.",
   "main": "dist/summernote-gallery.min.js",
   "keywords": [
