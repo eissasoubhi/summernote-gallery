@@ -12,7 +12,8 @@ export default class GalleryPlugin {
 
         plugin[options.name] = function(context) {
 
-            let buttonLabel = context.options[options.name]?.buttonLabel || _this.summernote_gallery.options.buttonLabel
+            let sgOptions = context.options[options.name] || {}
+            let buttonLabel = sgOptions.buttonLabel || _this.summernote_gallery.options.buttonLabel
 
             _this.summernote_gallery.options.buttonLabel = buttonLabel
 
