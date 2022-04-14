@@ -95,6 +95,8 @@ Feel free to modify the source file to suit your needs.
 
 # Contribution || Edit
 
+**Requirements: node v16**
+
 To run the plugin on local, head to the project root folder and run:
 1. `npm install`
 2. `npm run start` to start the project on 127.0.0.1:9090
