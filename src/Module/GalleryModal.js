@@ -174,12 +174,12 @@ export default class GalleryModal {
         this.$modal.find('.images-list').html('');
     }
 
-    // whether the images container has enough content to show the vertical scroll
+    // whether the images' container has enough content to show the vertical scroll
     imagesContainerHasScroll() {
         var $images_container = this.$modal.find('.modal-body');
         var $images_list = $images_container.find('.images-list');
 
-        return $images_container.height() != $images_list.height();
+        return parseInt($images_list.height()) > parseInt($images_container.height());
     }
 
     getModalTemplate() {

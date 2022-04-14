@@ -116,7 +116,7 @@ export default class SummernoteGallery {
 
             setTimeout(function () {
                 if (_this.modal.options.loadOnScroll && !_this.modal.imagesContainerHasScroll()) {
-                    // The loadOnScroll wont work if the images container doesn't have the scroll displayed,
+                    // The loadOnScroll won't work if the images' container doesn't have the scroll displayed,
                     // so we need to keep loading the images until the scroll shows.
                     _this.data_manager.fetchNext();
                 }
