@@ -1,26 +1,35 @@
 import EventManager from './EventManager'
+import DataManagerOptionsInterface from "./Interfaces/DataManagerOptionsInterface";
 
 export default class DataManager {
+    private fetch_type?: string;
+    private options: DataManagerOptionsInterface;
+    private current_page: number;
+    private is_fetching_locked: boolean;
+    private event: EventManager;
+    private fetch_url: string;
 
-    constructor(options) {
-        this.options = $.extend({
-            // full http url for fetching data
-            url: null,
+    constructor(options: DataManagerOptionsInterface) {
+        this.options = {
+            ...{
+                // full http url for fetching data
+                url: null,
 
-            // array of objects with 'src' and 'title' keys
-            data: [],
+                // array of objects with 'src' and 'title' keys
+                data: [],
 
-            // the key name that holds the data array
-            responseDataKey: 'data',
+                // the key name that holds the data array
+                responseDataKey: 'data',
 
-            // the key name that holds the next page link
-            nextPageKey: 'links.next',
-        }, options);
+                // the key name that holds the next page link
+                nextPageKey: 'links.next',
+            }, ...options
+        }
 
         this.init();
     }
 
-    init(response) {
+    init() {
         this.current_page = 0;
         this.is_fetching_locked = false;
         this.event = new EventManager();
@@ -29,7 +38,7 @@ export default class DataManager {
     }
 
     // stop data fetching if neither next page link nor data were found
-    setNextFetch(response) {
+    setNextFetch(response: any) {
         if (response.next_link && response.data.length) {
             this.fetch_url = response.next_link;
         } else {
@@ -46,8 +55,8 @@ export default class DataManager {
     }
 
     // get a key from object with dot notation, example: data.key.subkey.
-    getObjectKeyByString(object, dotted_key, default_val) {
-        var value = dotted_key.split('.').reduce(function (item, i) {
+    getObjectKeyByString(object: any, dotted_key: string, default_val?: any) {
+        const value = dotted_key.split('.').reduce(function (item: any, i: any) {
             return item ? item[i] : {};
         }, object);
 
@@ -58,7 +67,7 @@ export default class DataManager {
         return value && !$.isEmptyObject(value) ? value : default_val;
     }
 
-    parseResponse(response) {
+    parseResponse(response: any) {
 
         return {
             data: this.getObjectKeyByString(response, this.options.responseDataKey, []),
@@ -67,7 +76,7 @@ export default class DataManager {
     }
 
     fetchData() {
-        var _this = this;
+        const _this = this;
 
         if (this.fetch_type == 'data') {
 
@@ -82,7 +91,7 @@ export default class DataManager {
             // they must be synchronous.
             if (this.is_fetching_locked) return;
 
-            var current_link = _this.fetch_url;
+            const current_link = _this.fetch_url;
 
             this.event.trigger('beforeFetch');
 
@@ -90,17 +99,17 @@ export default class DataManager {
 
             $.ajax({
                 url: current_link,
-                beforeSend:function(xhr){
+                beforeSend:function(xhr: any){
                     // set the request link to get it afterwards in the response
                     xhr.request_link = current_link;
                 },
             })
             .always(function () {
-                // this is the first callback to be called when the request finishs
+                // this is the first callback to be called when the request finises
                 _this.unlockFetching();
             })
-            .done(function(response, status_text, xhr){
-                var parsed_response = _this.parseResponse(response);
+            .done(function(response, status_text, xhr: any){
+                const parsed_response = _this.parseResponse(response);
                 _this.current_page++;
 
                 //

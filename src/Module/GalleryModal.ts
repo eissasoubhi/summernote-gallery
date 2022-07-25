@@ -1,8 +1,14 @@
 import EventManager from './EventManager'
 
 export default class GalleryModal {
+    private $css: JQuery;
+    private readonly select_class: string;
+    private event: EventManager;
+    private template: string;
+    private readonly $modal: any;
+    private options: any;
 
-    constructor(options) {
+    constructor(options: any) {
         this.options = $.extend({
             // load more data on modal scroll
             loadOnScroll: false,
@@ -53,7 +59,7 @@ export default class GalleryModal {
     }
 
     // append images to the modal with data object
-    addImages(data, page) {
+    addImages(data: any, page: any) {
 
         var $page_images = this.createImages(data, page);
         var $images_list = this.$modal.find('.images-list');
@@ -66,7 +72,7 @@ export default class GalleryModal {
     }
 
     // generate image elements from data object
-    createImages(data, page) {
+    createImages(data: any, page: any) {
         var _this = this;
         let content = []
 
@@ -97,7 +103,7 @@ export default class GalleryModal {
         return content;
     }
 
-    showError(message_text, permanent) {
+    showError(message_text: any, permanent: any = false) {
         var $message = this.$modal.find('.message');
 
         $message.html('<span class="alert alert-danger">' + message_text + '</span>');
@@ -122,7 +128,7 @@ export default class GalleryModal {
         var $modal = this.$modal;
         var $modal_body = $modal.find('.modal-body');
 
-        $modal.find("button#save").click(function(event) {
+        $modal.find("button#save").click(function(event: any) {
             var $selected_img = $modal.find('.img-item img.' + _this.select_class);
 
             if (! $selected_img.length) {
@@ -134,7 +140,7 @@ export default class GalleryModal {
 
             _this.event.trigger('beforeSave', [_this]);
 
-            $selected_img.each(function(index, el) {
+            $selected_img.each(function(index: any, el: any) {
                 _this.event.trigger('save', [_this, $(this)]);
 
                 $(this).removeClass(_this.select_class);
@@ -147,11 +153,11 @@ export default class GalleryModal {
             _this.event.trigger('close')
         })
 
-        $modal.find("button#select-all").click(function(event) {
+        $modal.find("button#select-all").click(function(event: any) {
             $modal.find('img').addClass(_this.select_class);
         });
 
-        $modal.find("button#deselect-all").click(function(event) {
+        $modal.find("button#deselect-all").click(function(event: any) {
             $modal.find('img').removeClass(_this.select_class);
         });
 
@@ -184,7 +190,7 @@ export default class GalleryModal {
 
     getModalTemplate() {
 
-        var bootsrap_version = parseInt($.fn.modal.Constructor.VERSION);
+        var bootsrap_version = parseInt(($ as any).fn.modal.Constructor.VERSION);
         var header_content = [
             '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>',
             '<h4 class="modal-title">[gallery title]</h4>'

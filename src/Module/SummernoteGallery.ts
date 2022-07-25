@@ -2,7 +2,15 @@ import GalleryModal from './GalleryModal'
 import DataManager from './DataManager'
 
 export default class SummernoteGallery {
-    constructor(options) {
+    private options: any;
+    private plugin_default_options: {};
+    private editor: any;
+    private editable: any;
+    private context: any;
+    private plugin_options: any;
+    private modal: any;
+    private data_manager: any;
+    constructor(options: any) {
         this.options = $.extend({
             name: 'summernoteGallery',
             buttonLabel: '<i class="fa fa-file-image-o"></i> SN Gallery',
@@ -30,7 +38,7 @@ export default class SummernoteGallery {
     }
 
     saveLastFocusedElement() {
-        var focused_element = window.getSelection().focusNode;
+        var focused_element: any = window.getSelection().focusNode;
         var parent = $(this.editable).get(0);
         if ($.contains(parent, focused_element)) {
             $(this.editor).data('last_focused_element', focused_element)
@@ -43,9 +51,20 @@ export default class SummernoteGallery {
         $(this.editable).on('keypress, mousemove', function() {
             _this.saveLastFocusedElement();
         })
+
+        $(this.editable).on('click', 'summernote-gallery-brick .delete', function () {
+            // delete brick
+        })
+
+        $(this.editable).on('click', 'summernote-gallery-brick .edit', function () {
+            let $brick = $(this).parents('summernote-gallery-brick');
+            let data = $brick.data('brick'); // json
+
+            _this.modal.open(data);
+        })
     }
 
-    initGallery(context) {
+    initGallery(context: any) {
         this.context = context;
         this.editor = this.context.layoutInfo.note;
         this.editable = this.context.layoutInfo.editable;
@@ -64,11 +83,11 @@ export default class SummernoteGallery {
     attachModalEvents() {
         var _this = this;
 
-        this.modal.event.on('beforeSave', function (gallery_modal) {
+        this.modal.event.on('beforeSave', function (gallery_modal: any) {
             _this.recoverEditorFocus();
         });
 
-        this.modal.event.on('save', function (gallery_modal, $image) {
+        this.modal.event.on('save', function (gallery_modal: any, $image: any) {
             // add selected images to summernote editor
             _this.context.invoke(
                 'editor.pasteHTML',
@@ -76,13 +95,13 @@ export default class SummernoteGallery {
             );
         });
 
-        this.modal.event.on('scrollBottom', function (gallery_modal) {
+        this.modal.event.on('scrollBottom', function (gallery_modal: any) {
             if (_this.modal.options.loadOnScroll) {
                 _this.data_manager.fetchNext();
             }
         });
 
-        this.modal.event.on('close', function (gallery_modal) {
+        this.modal.event.on('close', function (gallery_modal: any) {
             _this.data_manager.init();
             _this.modal.clearContent();
         });
@@ -91,7 +110,7 @@ export default class SummernoteGallery {
     createButton() {
         var _this = this;
 
-        var button = $.summernote.ui.button({
+        var button = ($ as any).summernote.ui.button({
             className: 'w-100',
             contents: this.options.buttonLabel,
             tooltip: this.options.tooltip,
@@ -111,7 +130,7 @@ export default class SummernoteGallery {
         .on('beforeFetch', function () {
             _this.modal.showLoading();
         })
-        .on('fetch', function (data, page, link) {
+        .on('fetch', function (data: any, page: any, link: any) {
             _this.modal.addImages(data, page);
 
             setTimeout(function () {
@@ -125,7 +144,7 @@ export default class SummernoteGallery {
         .on('afterFetch', function () {
             _this.modal.hideLoading();
         })
-        .on('error', function (error) {
+        .on('error', function (error: any) {
             _this.modal.showError(error, true);
         });
     }

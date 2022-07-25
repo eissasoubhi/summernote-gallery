@@ -1,22 +1,57 @@
-const path = require('path');
 
-module.exports = {
-  entry: path.resolve(__dirname, 'src'),
+const path = require( 'path' );
 
-  output: {
-    filename: 'summernote-gallery.min.js',
-    publicPath: 'dist/',
-  },
+// common Configuration
+const config = {
 
-  resolve: {
-    alias: {
-        '@': path.resolve(__dirname, 'src/')
-    }
-  },
+    // bundling mode
+    mode: 'production',
 
-  module: {
-    rules: [{ test: /\.js?$/, loader: 'babel-loader', exclude: /node_modules/ }],
-  },
+    // file resolutions
+    resolve: {
+        extensions: [ '.tsx', '.ts', '.js' ],
+        alias: {
+            '@': path.resolve(__dirname, 'src/'),
+            Bricks: path.resolve(__dirname, 'src/Bricks/'),
+            Utils: path.resolve(__dirname, 'src/Utils/')
+        }
+    },
 
-  devtool: 'source-map'
+    // loaders
+    module: {
+        rules: [
+            {
+                test: /\.tsx?/,
+                use: {
+                    loader: 'ts-loader'
+                },
+                exclude: /node_modules/,
+            }
+        ]
+    },
+
+    devtool: 'source-map'
 };
+
+const galleryBrickConfig = { ...config, ...{
+    name: "galleryBrick",
+    entry: "./src/index.ts",
+    output: {
+        path: path.resolve( __dirname, 'dist' ),
+        filename: 'snb-gallery-brick.min.js',
+    },
+}};
+
+const galleryModuleConfig = { ...config, ...{
+    name: "galleryModule",
+    entry: "./src/Module/index.ts",
+    output: {
+        path: path.resolve( __dirname, 'dist' ),
+        filename: 'module/index.js',
+    },
+}};
+
+// Return Array of Configurations
+module.exports = [
+    galleryBrickConfig, galleryModuleConfig,
+];

@@ -1,7 +1,8 @@
 import SummernoteGallery from './SummernoteGallery'
 
 export default class GalleryPlugin {
-    constructor(options) {
+    protected summernote_gallery: any
+    constructor(options: any) {
         this.summernote_gallery = new SummernoteGallery(options);
     }
 
@@ -10,6 +11,7 @@ export default class GalleryPlugin {
         let _this = this;
         let options = this.summernote_gallery.options
 
+        // @ts-ignore
         plugin[options.name] = function(context) {
 
             let sgOptions = context.options[options.name] || {}
@@ -21,7 +23,7 @@ export default class GalleryPlugin {
             context.memo('button.' + options.name, _this.createButton());
 
             this.events = {
-                'summernote.keyup': function(we, e)
+                'summernote.keyup': function(we: any, e: any)
                 {
                     _this.summernote_gallery.saveLastFocusedElement();
                 }
