@@ -33,7 +33,7 @@ const config = {
     devtool: 'source-map'
 };
 
-const galleryBrickConfig = { ...config, ...{
+const brickConfig = { ...config, ...{
     name: "galleryBrick",
     entry: "./src/index.ts",
     output: {
@@ -42,10 +42,14 @@ const galleryBrickConfig = { ...config, ...{
     },
 }};
 
-const galleryModuleConfig = { ...config, ...{
+const moduleConfig = { ...config, ...{
     name: "galleryModule",
     entry: "./src/Module/index.ts",
     output: {
+        library: {
+          name: 'module',
+          type: 'umd',
+        },
         path: path.resolve( __dirname, 'dist' ),
         filename: 'module/index.js',
     },
@@ -53,5 +57,5 @@ const galleryModuleConfig = { ...config, ...{
 
 // Return Array of Configurations
 module.exports = [
-    galleryBrickConfig, galleryModuleConfig,
+    brickConfig, moduleConfig,
 ];
