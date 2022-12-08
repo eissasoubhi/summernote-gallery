@@ -1,4 +1,4 @@
-import EventManager from './EventManager'
+import EventManager from 'snb-components/src/EventManager'
 
 export default class GalleryModal {
     private $css: JQuery;

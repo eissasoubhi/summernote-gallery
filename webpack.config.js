@@ -23,9 +23,12 @@ const config = {
             {
                 test: /\.tsx?/,
                 use: {
-                    loader: 'ts-loader'
+                    loader: 'ts-loader',
+                    options: {
+                        allowTsInNodeModules: true
+                    }
                 },
-                exclude: /node_modules/,
+                exclude: /node_modules(?!\/snb-components)/,
             }
         ]
     },

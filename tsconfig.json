@@ -4,7 +4,7 @@
     "noImplicitAny": true,
     "module": "es6",
     "target": "es5",
-    "jsx": "react",
+    "jsx": "react-jsx",
     "allowJs": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
@@ -12,5 +12,5 @@
     "sourceMap": true
   },
   "exclude": ["node_modules"],
-  "include": ["./src/**/*"]
+  "include": ["./src/**/*", "node_modules/snb-components/**/*"]
 }

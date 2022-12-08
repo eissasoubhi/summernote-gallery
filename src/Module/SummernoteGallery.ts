@@ -1,5 +1,5 @@
 import GalleryModal from './GalleryModal'
-import DataManager from './DataManager'
+import DataManager from 'snb-components/src/Module/DataManager'
 
 export default class SummernoteGallery {
     private options: any;
@@ -131,6 +131,7 @@ export default class SummernoteGallery {
             _this.modal.showLoading();
         })
         .on('fetch', function (data: any, page: any, link: any) {
+            console.log('data', data)
             _this.modal.addImages(data, page);
 
             setTimeout(function () {
