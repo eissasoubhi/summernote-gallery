@@ -130,8 +130,8 @@ export default class SummernoteGallery {
         .on('beforeFetch', function () {
             _this.modal.showLoading();
         })
-        .on('fetch', function (data: any, page: any, link: any) {
-            console.log('data', data)
+        .on('fetch', function ({data, page, link}: {data:any, page:any, link: any}) {
+
             _this.modal.addImages(data, page);
 
             setTimeout(function () {
