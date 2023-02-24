@@ -1,279 +1,120 @@
-import EventManager from 'snb-components/src/EventManager'
+import ModalAbstract from "snb-components/src/Module/ModalAbstract";
+import RenderModalTemplate from './templates/modalTemplate'
+import RenderModalImagesTemplate from './templates/modalImagesTemplate'
+import ModalInterface from 'snb-components/src/Module/Interfaces/Modal/ModalInterface'
+import EventsAwareInterface from 'snb-components/src/Module/Interfaces/EventsAwareInterface'
+import GalleryDataInterface from "./Interfaces/GalleryDataInterface";
+import GalleryModalOptionsInterface from './Interfaces/GalleryModalOptionsInterface'
+import MessageFactoriesProvider from "snb-components/src/MessageFactoriesProvider";
+import GalleryDataSourceInterface from './Interfaces/GalleryDataSourceInterface'
+import Utils from "snb-components/src/Utils";
+import GalleryModalModeInterface from "./Interfaces/GalleryModalModeInterface"
+import ModalModeInterface from "snb-components/src/Module/Interfaces/Modal/ModalModeInterface";
 
-export default class GalleryModal {
-    private $css: JQuery;
-    private readonly select_class: string;
-    private event: EventManager;
-    private template: string;
-    private readonly $modal: any;
-    private options: any;
+export default class GalleryModal extends ModalAbstract implements ModalInterface, EventsAwareInterface{
+    public options: GalleryModalOptionsInterface
+    public mode: GalleryModalModeInterface
 
-    constructor(options: any) {
-        this.options = $.extend({
-            // load more data on modal scroll
-            loadOnScroll: false,
-
-            // modal max height
-            maxHeight: 500,
-
-            // modal title
-            title: 'summernote image gallery',
-
-            // close button text
-            close_text: 'Close',
-
-            // save button text
-            ok_text: 'Add',
-
-            // select all button text
-            selectAll_text: 'Select all',
-
-            // deselect all button text
-            deselectAll_text: 'Deselect all',
-
-            // message error to display when no image is selected
-            noImageSelected_msg: 'One image at least must be selected.'
-        }, options);
-
-        this.event = new EventManager();
-
-        this.template = this.getModalTemplate();
-        this.$modal = $(this.template).hide();
-
-        // class to add to image when selected
-        this.select_class = "selected-img";
-
-        this.addStyleToDom();
-        this.setOptions();
-
-        this.attachEvents();
+    constructor(mode: ModalModeInterface, messagesFactoriesProvider: MessageFactoriesProvider, options: GalleryModalOptionsInterface) {
+        super(mode, messagesFactoriesProvider, options)
     }
 
-    setOptions() {
-        this.$modal.find('.modal-body').css('max-height', this.options.maxHeight);
-        this.$modal.find('.modal-title').html(this.options.title);
-        this.$modal.find('#close').html(this.options.close_text);
-        this.$modal.find('#save').html(this.options.ok_text);
-        this.$modal.find('#select-all').html(this.options.selectAll_text);
-        this.$modal.find('#deselect-all').html(this.options.deselectAll_text);
+    getSaveButton(): JQuery {
+        return this.getBsModal().find("button#save")
     }
 
-    // append images to the modal with data object
-    addImages(data: any, page: any) {
-
-        var $page_images = this.createImages(data, page);
-        var $images_list = this.$modal.find('.images-list');
-
-        if ($images_list.find('.img-item').length) {
-            this.$modal.find('.images-list').append($page_images);
-        } else {
-            this.$modal.find('.images-list').html($page_images);
+    getData(): GalleryDataInterface {
+        return {
+            brickIdentifier: `brick_${Date.now()}`,
+            selectedImages: this.getBody().find('.img-item img.' + this.options.selectClassName).map((i, img) => {
+                return {
+                    id: $(img).data('id'),
+                    title: $(img).attr('title'),
+                    url: $(img).attr('src'),
+                }
+            }).toArray()
         }
     }
 
-    // generate image elements from data object
-    createImages(data: any, page: any) {
-        var _this = this;
-        let content = []
-
-        for (var i = 0; i < data.length; i++) {
-
-            var $image = $('<img class="img-thumbnail sng-image" title="'+ data[i].title +'" data-page="' + page + '"/>');
-
-            $image.get(0).onload = function() {
-                $(this).siblings('.loading').hide()
-                $(this).click(function(event) {
-                    $(this).toggleClass(_this.select_class);
-                });
-            }
-
-            $image.attr('src', data[i].src);
-
-            var $item = $('<div class="col-md-2 mb-4 img-item">'
-                            +'<i class="fa fa-check"></i>'
-                            +'<span class="loading">'
-                                +'<i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>'
-                            +'</span>'
-                        +'</div>');
-
-            $item.prepend($image);
-            content.push($item)
-        }
-
-        return content;
+    getBody(): JQuery {
+        return this.getBsModal().find('.modal-body')
     }
 
-    showError(message_text: any, permanent: any = false) {
-        var $message = this.$modal.find('.message');
+    getImagesList(): JQuery {
+        return this.getBsModal().find('.images-list')
+    }
 
-        $message.html('<span class="alert alert-danger">' + message_text + '</span>');
+    getMessagesContainer(): JQuery {
+        return this.getBsModal().find(`.${this.options.messageContainerClass}`)
+    }
 
-        if (!permanent) {
-            setTimeout(function () {
-                $message.html('');
-            }, 5000);
-        }
+    getTemplate(data: GalleryDataInterface, options: GalleryModalOptionsInterface): JSX.Element {
+        return RenderModalTemplate(data, options)
     }
 
     showLoading () {
-        this.$modal.find('.modal-footer .loading').show();
+        this.getBsModal().find('.modal-footer .loading').show();
     }
 
     hideLoading () {
-        this.$modal.find('.modal-footer .loading').hide();
+        this.getBsModal().find('.modal-footer .loading').hide();
     }
 
-    attachEvents() {
-        var _this = this;
-        var $modal = this.$modal;
-        var $modal_body = $modal.find('.modal-body');
+    // append images to the modal with data object
+    addImages(data: GalleryDataSourceInterface) {
+        const _this = this
+        const imagesTpl = Utils.JSXElementToHTMLElement(
+            RenderModalImagesTemplate(data, this.options, this.mode.getModalLoadData(this.options)
+        ))
 
-        $modal.find("button#save").click(function(event: any) {
-            var $selected_img = $modal.find('.img-item img.' + _this.select_class);
+        imagesTpl.map(container => {
+            const $img = $(container).find('img')
 
-            if (! $selected_img.length) {
-                _this.showError(_this.options.noImageSelected_msg);
-                return;
+            $img.get(0).onload = function() {
+                $(this).siblings('.loading').hide()
+                $(this).on('click', function(event) {
+                    $(this).toggleClass(_this.options.selectClassName);
+                });
             }
-
-            $modal.modal('hide')
-
-            _this.event.trigger('beforeSave', [_this]);
-
-            $selected_img.each(function(index: any, el: any) {
-                _this.event.trigger('save', [_this, $(this)]);
-
-                $(this).removeClass(_this.select_class);
-            });
-
-            _this.event.trigger('afterSave', [this]);
-        });
-
-        $modal.on('hidden.bs.modal', function () {
-            _this.event.trigger('close')
         })
 
-        $modal.find("button#select-all").click(function(event: any) {
-            $modal.find('img').addClass(_this.select_class);
-        });
-
-        $modal.find("button#deselect-all").click(function(event: any) {
-            $modal.find('img').removeClass(_this.select_class);
-        });
-
-        $modal_body.scroll(function() {
-            var $images_list = $modal.find('.images-list');
-            var is_near_bottom = $modal_body.scrollTop() + $modal_body.height() >= $images_list.height() - 100;
-
-            if (is_near_bottom) {
-                _this.event.trigger('scrollBottom', [_this]);
-            }
-        });
-    }
-
-    open() {
-        this.$modal.modal();
-    }
-
-    clearContent() {
-        // Reset the initial html
-        this.$modal.find('.images-list').html('');
+        this.getImagesList().append(imagesTpl);
     }
 
     // whether the images' container has enough content to show the vertical scroll
     imagesContainerHasScroll() {
-        var $images_container = this.$modal.find('.modal-body');
-        var $images_list = $images_container.find('.images-list');
-
-        return parseInt($images_list.height()) > parseInt($images_container.height());
+        return Math.floor(this.getImagesList().height()) > Math.floor(this.getBody().height());
     }
 
-    getModalTemplate() {
-
-        var bootsrap_version = parseInt(($ as any).fn.modal.Constructor.VERSION);
-        var header_content = [
-            '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>',
-            '<h4 class="modal-title">[gallery title]</h4>'
-        ];
-
-        var modal_html = ''+
-            '<div class="modal summernote-gallery fade" tabindex="-1" role="dialog">'
-                + '<div class="modal-lg modal-dialog ">'
-                    + '<div class="modal-content">'
-                        + '<div class="modal-header">'
-                            + (bootsrap_version == 3 ? header_content.join('') : header_content.reverse().join(''))
-                        + '</div>'
-                        + '<div class="modal-body">'
-                            + '<div class="row images-list">'
-                            + '</div>'
-                        + '</div>'
-                        + '<div class="modal-footer">'
-                            + '<span style="display: none;position: absolute;left: 10px;bottom: 10px;" class="loading" >'
-                                + '<i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>'
-                            + '</span >'
-                            + '<span style="display: inline-block; margin-right: 50px;">'
-                                + '<button type="button" id="deselect-all" class="btn btn-default">[Deselect-all]</button>'
-                                + '<button type="button" id="select-all" class="btn btn-default">[select-all]</button>'
-                            + '</span >'
-                            + '<button type="button" id="close" class="btn btn-default" data-dismiss="modal">[Close]</button>'
-                            + '<button type="button" id="save" class="btn btn-primary">[Add]</button>'
-                            + '<span class="message" ></span >'
-                        + '</div>'
-                    + '</div>'
-                + '</div>'
-            + '</div>';
-
-        return modal_html;
+    resetContent() {
+        // Reset the initial html
+        this.getImagesList().html('');
     }
 
-    addStyleToDom() {
-        this.$css = $('<style>'
-                        +'.img-item{'
-                            +'position : relative;'
-                        +'}'
-                        +'.img-item .fa-check{'
-                            +'position : absolute;'
-                            +'top : -10px;'
-                            +'right : 5px;'
-                            +'font-size: 30px;'
-                            +'color: #337AB7;'
-                        +'}'
-                        +'.img-item .sng-image{'
-                            /*+'min-height : 119.66px;'*/
-                        +'}'
-                        +'.img-item .loading{'
-                            +'position: absolute;'
-                            +'margin: auto;'
-                            +'top: -20px;'
-                            +'bottom: 0;'
-                            +'display: block;'
-                            +'left: 0;'
-                            +'right: 0;'
-                            +'width: 60px;'
-                            +'height: 42px;'
-                            +'text-align: center;'
-                        +'}'
-                        +'.modal.summernote-gallery .message{'
-                            +'display: block;'
-                            +'padding: 30px 0 20px 0;'
-                        +'}'
-                        +'.modal.summernote-gallery .message:empty{'
-                            +'display: block;'
-                            +'padding: 0px!important;'
-                        +'}'
-                        +'.modal.summernote-gallery .modal-body{'
-                            +'overflow: scroll;'
-                        +'}'
-                        +'.img-item .fa-check{'
-                            +'display : none;'
-                        +'}'
-                        +'.img-item .'+ this.select_class +' + .fa-check{'
-                            +'display : block;'
-                        +'}'
-                        +'.'+ this.select_class +'{'
-                            +'background-color: #5CB85C;'
-                        +'}'
-                    +'</style>');
-        this.$css.appendTo('body');
+    attachEvents() {
+        super.attachEvents();
+        const $modal = this.getBsModal()
+
+        $modal.on('hidden.bs.modal', () => {
+            this.resetContent();
+            this.trigger('close')
+            $modal.remove();
+        })
+
+        $modal.find("button#select-all").on('click', () => {
+            $modal.find('img').addClass(this.options.selectClassName);
+        });
+
+        $modal.find("button#deselect-all").on('click',() => {
+            this.getBsModal().find('img').removeClass(this.options.selectClassName);
+        });
+
+        this.getBody().on('scroll',() => {
+            const isNearBottom = this.getBody().scrollTop() + this.getBody().height() >= this.getImagesList().height() - 100;
+
+            if (isNearBottom) {
+                this.trigger('scrollBottom', {galleryModal: this});
+            }
+        });
     }
 }

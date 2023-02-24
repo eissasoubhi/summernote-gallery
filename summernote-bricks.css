@@ -1,0 +1,44 @@
+.snb-editable-brick-wrap .snb-brick-actions {
+    display: flex!important;
+    position: absolute;
+    top: 0;
+    z-index: 1025;
+    opacity: 0;
+    -webkit-transition: .5s ease, opacity .5s ease;
+    -moz-transition: .5s ease, opacity .5s ease;
+    -ms-transition: .5s ease, opacity .5s ease;
+    -o-transition: .5s ease, opacity .5s ease;
+    transition: .5s ease, opacity .5s ease;
+}
+
+.snb-editable-brick-wrap:hover .snb-brick-actions {
+    opacity: 1;
+}
+
+.snb-editable-brick-wrap .snb-brick-actions button{
+    padding: 0px 5px;
+    margin: 2px;
+}
+
+.snb-editable-brick-wrap .snb-brick-actions .snb-linebreaks .snb-linebreak-up{
+    margin-right: 0px;
+}
+
+.snb-editable-brick-wrap .snb-brick-actions .snb-linebreaks .snb-linebreak-down{
+    margin-left: 0px;
+}
+
+.snb-editable-brick-wrap {
+    border: 1px solid transparent;
+    position: relative;
+    -webkit-transition: box-shadow .5s ease, border .5s ease;
+    -moz-transition: box-shadow .5s ease, border .5s ease;
+    -ms-transition: box-shadow .5s ease, border .5s ease;
+    -o-transition: box-shadow .5s ease, border .5s ease;
+    transition: box-shadow .5s ease, border .5s ease;
+}
+
+.snb-editable-brick-wrap:hover {
+    border: 1px solid #d0d0d0;
+    box-shadow: 0px 0px 1px 0px #e2e2e2;
+}

@@ -1,6 +1,7 @@
-import GalleryPlugin from './Module'
+import SummernotePlugin from './Module'
+import extensions from './Extensions'
 
-var gallery_plugin = new GalleryPlugin({});
+const summernotePlugin = new SummernotePlugin('summernoteGallery', extensions);
 
 // add the plugin to summernote
-$.extend(($ as any).summernote.plugins, gallery_plugin.getPlugin());
+$.extend(($ as any).summernote.plugins, summernotePlugin.getPlugin());
