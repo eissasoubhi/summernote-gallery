@@ -18579,7 +18579,6 @@ var DataManager = /** @class */ (function () {
                 _this.current_page++;
                 //
                 _this.setNextFetch(parsed_response);
-                console.log('parsed_response', parsed_response);
                 _this.event.trigger('fetch', {
                     data: _this.options.formater(parsed_response.data, _this.current_page, response),
                     page: _this.current_page,
@@ -19903,12 +19902,14 @@ var SummernotePlugin = /** @class */ (function () {
     function SummernotePlugin(name, extensions) {
         if (extensions === void 0) { extensions = []; }
         this.name = name;
-        this.summernoteGallery = new _SummernoteGallery__WEBPACK_IMPORTED_MODULE_0__["default"](this.name, extensions);
+        this.summernoteGallery = null;
+        this.extensions = extensions;
     }
     SummernotePlugin.prototype.getPlugin = function () {
         var plugin = {};
         var _this = this;
         plugin[this.name] = function (context) {
+            _this.summernoteGallery = new _SummernoteGallery__WEBPACK_IMPORTED_MODULE_0__["default"](_this.name, _this.extensions);
             _this.summernoteGallery.init(context);
             context.memo('button.' + _this.name, _this.createButton());
             this.events = {
