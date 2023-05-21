@@ -1,121 +1,150 @@
+import Editor from "snb-components/src/Editor"
 import GalleryModal from './GalleryModal'
-import DataManager from './DataManager'
+import EditableBrick from "snb-components/src/Module/EditableBrick"
+import GalleryCreatingMode from "./ModalModes/GalleryCreatingMode"
+import SummernoteBrickInterface from 'snb-components/src/Module/Interfaces//SummernoteBrickInterface'
+import SummernotePluginInterface from 'snb-components/src/Module/Interfaces//Plugin/SummernotePluginInterface'
+import GalleryPluginOptionsInterface from "./Interfaces/GalleryPluginOptionsInterface";
+import GalleryEditingMode from "./ModalModes/GalleryEditingMode";
+import ExtensionsManager from "snb-components/src/ExtensionsManager";
+import ExtensibleBrickInterface from "snb-components/src/Module/Interfaces/ExtensibleBrickInterface";
+import SnbExtensionInterface from "snb-components/src/Module/Interfaces/SnbExtensionInterface";
+import GalleryMessageFactoriesProvider from "./Messages/GalleryMessageFactoriesProvider";
+import LineBreakManager from "snb-components/src/LineBreak/LineBreakManager";
+import DataManager from "snb-components/src/Module/DataManager";
+import GalleryModalOptionsInterface from "./Interfaces/GalleryModalOptionsInterface";
+import Page from "./Page";
+import GalleryModalModeInterface from "./Interfaces/GalleryModalModeInterface";
+import GalleryImageInterface from "./Interfaces/GalleryImageInterface";
 
-export default class SummernoteGallery {
-    private options: any;
-    private plugin_default_options: {};
-    private editor: any;
-    private editable: any;
-    private context: any;
-    private plugin_options: any;
-    private modal: any;
-    private data_manager: any;
-    constructor(options: any) {
-        this.options = $.extend({
-            name: 'summernoteGallery',
-            buttonLabel: '<i class="fa fa-file-image-o"></i> SN Gallery',
-            tooltip: 'summernote gallery'
-        }, options);
+export default class SummernoteGallery implements SummernoteBrickInterface, SummernotePluginInterface, ExtensibleBrickInterface {
+    private pluginOptions: GalleryPluginOptionsInterface;
+    private readonly pluginName: string;
+    public editor: Editor;
+    private extensionsManager: ExtensionsManager;
+    private readonly extensions: SnbExtensionInterface[];
+    private linebreakManager: LineBreakManager;
+    private page: Page;
 
-        this.plugin_default_options = {}
+    constructor(pluginName: string, extensions: SnbExtensionInterface[]) {
+        this.pluginName = pluginName
+
+        this.extensions = extensions
+
+        this.extensionsManager = new ExtensionsManager()
     }
 
-    // set the focus to the last focused element in the editor
-    recoverEditorFocus() {
-        var last_focused_el = $(this.editor).data('last_focused_element');
-        if(typeof last_focused_el !== "undefined") {
-            var editor = this.editable;
-            var range = document.createRange();
-            var sel = window.getSelection();
-            var cursor_position =  last_focused_el.length;
+    init(context: any): void {
+        this.pluginOptions = $.extend(true, this.defaultOptions(), context.options[this.pluginName])
+        this.editor = new Editor(context)
+        this.linebreakManager = new LineBreakManager(this.editor)
+        this.page = new Page(this.pluginOptions)
+        this.page.init()
 
-            range.setStart(last_focused_el, cursor_position);
-            range.collapse(true);
-            sel.removeAllRanges();
-            sel.addRange(range);
-            editor.focus();
-        }
-    }
+        this.attachEditorEvents();
 
-    saveLastFocusedElement() {
-        var focused_element: any = window.getSelection().focusNode;
-        var parent = $(this.editable).get(0);
-        if ($.contains(parent, focused_element)) {
-            $(this.editor).data('last_focused_element', focused_element)
-        }
+        this.addOptionsExtensions()
+
+        this.extensionsManager.triggerEvent('onInit', [this.editor])
     }
 
     attachEditorEvents() {
-        var _this = this;
-
-        $(this.editable).on('keypress, mousemove', function() {
-            _this.saveLastFocusedElement();
+        this.editor.on('brick-editing', (brick: HTMLElement) => {
+            this.openModal(new GalleryEditingMode(brick, this.editor) )
         })
 
-        $(this.editable).on('click', 'summernote-gallery-brick .delete', function () {
-            // delete brick
-        })
+        this.editor.on('brick-removed', (brick: HTMLElement) => {
+            const editableBrick = new EditableBrick(brick, {
+                editableBrickClass: this.editor.editableBrickClass,
+            })
 
-        $(this.editable).on('click', 'summernote-gallery-brick .edit', function () {
-            let $brick = $(this).parents('summernote-gallery-brick');
-            let data = $brick.data('brick'); // json
+            const blankLineIdentifier = editableBrick.getBrickData().brickIdentifier
 
-            _this.modal.open(data);
+            this.linebreakManager.removeBlankLinebreak(blankLineIdentifier)
         })
     }
 
-    initGallery(context: any) {
-        this.context = context;
-        this.editor = this.context.layoutInfo.note;
-        this.editable = this.context.layoutInfo.editable;
-        this.plugin_options = $.extend(
-            this.plugin_default_options,
-            this.context.options[this.options.name] || {}
-        )
+    attachModalEvents(modal: GalleryModal, dataManager: DataManager) {
 
-        this.modal = new GalleryModal(this.plugin_options.modal);
-        this.data_manager = new DataManager(this.plugin_options.source);
-
-        this.attachModalEvents();
-        this.attachEditorEvents();
-    }
-
-    attachModalEvents() {
-        var _this = this;
-
-        this.modal.event.on('beforeSave', function (gallery_modal: any) {
-            _this.recoverEditorFocus();
+        modal.on('beforeSave',  () => {
+            this.editor.recoverEditorFocus();
         });
 
-        this.modal.event.on('save', function (gallery_modal: any, $image: any) {
-            // add selected images to summernote editor
-            _this.context.invoke(
-                'editor.pasteHTML',
-                '<img src="' + $image.attr('src') + '" alt="' + ($image.attr('alt') || "") + '" />'
-            );
-        });
-
-        this.modal.event.on('scrollBottom', function (gallery_modal: any) {
-            if (_this.modal.options.loadOnScroll) {
-                _this.data_manager.fetchNext();
+        modal.on('scrollBottom', () => {
+            if (modal.options.loadOnScroll) {
+                dataManager.fetchNext();
             }
         });
 
-        this.modal.event.on('close', function (gallery_modal: any) {
-            _this.data_manager.init();
-            _this.modal.clearContent();
+        modal.on('close', () => {
+            dataManager.init();
         });
     }
 
-    createButton() {
-        var _this = this;
+    attachDataEvents(modal: GalleryModal, dataManager: DataManager) {
+        dataManager.on('beforeFetch', () => {
+            modal.showLoading();
+        })
+        .on('fetch', ({ data }: { data: GalleryImageInterface[] }) => {
 
-        var button = ($ as any).summernote.ui.button({
+            modal.addImages({
+                images: data
+            });
+
+            setTimeout (() => {
+                if (modal.options.loadOnScroll && !modal.imagesContainerHasScroll()) {
+                    // The loadOnScroll won't work if the images' container doesn't have the scroll displayed,
+                    // so we need to keep loading the images until the scroll shows.
+                    dataManager.fetchNext();
+                }
+            }, 2000)
+        })
+        .on('afterFetch', () => {
+            modal.hideLoading();
+        })
+        .on('error', ({ error }: { error: string }) => {
+            modal.showErrors([error]);
+        });
+    }
+
+    addOptionsExtensions(): void {
+        const optionsExtensions: string[] = this.pluginOptions.extensions || [
+            ''
+        ]
+        const indexedExtensions: { [key: string]: SnbExtensionInterface } = {}
+
+        for (let i = 0; i < this.extensions.length; i++) {
+            indexedExtensions[this.extensions[i].name] = this.extensions[i]
+        }
+
+        for (let i = 0; i < optionsExtensions.length; i++) {
+            const optionsExtension = optionsExtensions[i]
+
+            if (typeof indexedExtensions[optionsExtension] !== 'undefined') {
+                this.use(indexedExtensions[optionsExtension])
+            } else {
+                console.error(`"${optionsExtension}" is an invalid extension name`)
+            }
+        }
+    }
+
+    openModal(mode: GalleryModalModeInterface) {
+        let modal = new GalleryModal(mode, new GalleryMessageFactoriesProvider(), this.pluginOptions.modal)
+        let dataManager = new DataManager(this.pluginOptions.source);
+        this.attachModalEvents(modal, dataManager)
+        this.attachDataEvents(modal, dataManager)
+
+        dataManager.fetchData()
+        modal.open()
+    }
+
+    createButton():JQueryStatic {
+        let button = ($ as any).summernote.ui.button({
             className: 'w-100',
-            contents: this.options.buttonLabel,
-            tooltip: this.options.tooltip,
-            click: function() {
-                _this.openGallery();
+            contents: this.pluginOptions.buttonLabel,
+            tooltip: this.pluginOptions.tooltip,
+            click: () => {
+                this.openModal(new GalleryCreatingMode(this.editor) )
             }
         });
 
@@ -123,35 +152,62 @@ export default class SummernoteGallery {
         return button.render();
     }
 
-    attachDataEvents() {
-        var _this = this;
+    use(extension: SnbExtensionInterface): void {
+        this.extensionsManager.add(extension)
+    }
 
-        this.data_manager.event
-        .on('beforeFetch', function () {
-            _this.modal.showLoading();
-        })
-        .on('fetch', function (data: any, page: any, link: any) {
-            _this.modal.addImages(data, page);
+    defaultOptions(): GalleryPluginOptionsInterface {
+        return {
+            modal: this.getModalDefaultOptions(),
 
-            setTimeout(function () {
-                if (_this.modal.options.loadOnScroll && !_this.modal.imagesContainerHasScroll()) {
-                    // The loadOnScroll won't work if the images' container doesn't have the scroll displayed,
-                    // so we need to keep loading the images until the scroll shows.
-                    _this.data_manager.fetchNext();
+            source: null,
+
+            buttonLabel: '<i class="fa fa-file-image-o"></i> SN Gallery',
+
+            tooltip: 'Summernote Gallery',
+
+            extensions: []
+        }
+    }
+
+    getModalDefaultOptions(): GalleryModalOptionsInterface {
+        return {
+
+            // load more data on modal scroll
+            loadOnScroll: false,
+
+            // modal height
+            height: 500,
+
+            // modal title
+            title: 'summernote image gallery',
+
+            // close button text
+            closeText: 'Close',
+
+            // save button text
+            saveText: 'Add',
+
+            // select all button text
+            selectAllText: 'Select all',
+
+            // deselect all button text
+            deselectAllText: 'Deselect all',
+
+            // the html element class containing the modal messages
+            messageContainerClass: 'snb-modal-message',
+
+            // the class added to the selected image on the modal
+            selectClassName: 'selected-img',
+
+            // data validations
+            validations: {
+                selectedImages: {
+                    required: {
+                        message: 'At least one image must be selected!'
+                    }
                 }
-            }, 2000)
-        })
-        .on('afterFetch', function () {
-            _this.modal.hideLoading();
-        })
-        .on('error', function (error: any) {
-            _this.modal.showError(error, true);
-        });
+            }
+        }
     }
-
-    openGallery() {
-        this.attachDataEvents();
-        this.data_manager.fetchData();
-        this.modal.open();
-    }
-}
+ }

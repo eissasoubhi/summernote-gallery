@@ -16,7 +16,7 @@
     "@types/react": "^18.0.5",
     "@types/react-dom": "^18.0.2",
     "http-serve": "^1.0.1",
-    "react": "^18.0.0",
+    "react": "^18.2.0",
     "react-dom": "^18.0.0",
     "ts-loader": "^9.2.8",
     "typescript": "^4.6.3",
@@ -26,7 +26,8 @@
   "scripts": {
     "start": "node node_modules/http-serve/bin/http-serve -a 127.0.0.1 -p 9091",
     "build": "webpack --mode=production",
-    "dev": "webpack --mode development --watch"
+    "dev": "webpack --mode development --watch",
+    "dev-nc": "webpack --mode development --watch --no-cache"
   },
   "author": "Eissa Soubhi <eissa.soubhi@gmail.com> (http://eissa-soubhi.com/)",
   "license": "MIT",

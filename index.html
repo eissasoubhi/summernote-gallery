@@ -7,6 +7,7 @@
     <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" >
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css">
         <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./summernote-bricks.css">
     <style type="text/css">
         @-moz-keyframes bounce {
           0%, 20%, 50%, 80%, 100% {
@@ -169,10 +170,25 @@
                     url: location.origin+location.pathname+'/server/example.json',
                     responseDataKey: 'data',
                     nextPageKey: 'links.next',
+                    formater: (data, page, response) => {
+                        return data.map(image => {
+                            return {
+                                id: image.id+''+page,
+                                url: image.src,
+                                title: image.title
+                            }
+                        })
+                    }
                 },
                 modal: {
                     loadOnScroll: true,
-                    noImageSelected_msg: 'No image was selected, please select one by clicking it!',
+                    validations: {
+                        selectedImages:{
+                            required: {
+                                message: 'No image was selected, please select one by clicking it!',
+                            }
+                        }
+                    }
                 },
                 buttonLabel: '<i class="fa fa-file-image-o"></i> SN Gallery'
             }

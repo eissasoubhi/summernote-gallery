@@ -1,43 +1,44 @@
 import SummernoteGallery from './SummernoteGallery'
+import SnbExtensionInterface from "snb-components/src/Module/Interfaces/SnbExtensionInterface";
 
-export default class GalleryPlugin {
-    protected summernote_gallery: any
-    constructor(options: any) {
-        this.summernote_gallery = new SummernoteGallery(options);
+export default class SummernotePlugin {
+    private summernoteGallery: SummernoteGallery;
+    private readonly name: string;
+    private extensions: SnbExtensionInterface[];
+    
+    constructor(name: string, extensions: SnbExtensionInterface[] = []) {
+        this.name = name
+        this.summernoteGallery = null
+        this.extensions = extensions
     }
 
-    getPlugin() {
-        let plugin = {};
+    getPlugin(): object {
+        let plugin: any = {};
         let _this = this;
-        let options = this.summernote_gallery.options
 
-        // @ts-ignore
-        plugin[options.name] = function(context) {
+        plugin[this.name] = function(context: any) {
 
-            let sgOptions = context.options[options.name] || {}
-            let buttonLabel = sgOptions.buttonLabel || _this.summernote_gallery.options.buttonLabel
+            _this.summernoteGallery = new SummernoteGallery(_this.name, _this.extensions);
+            _this.summernoteGallery.init(context);
 
-            _this.summernote_gallery.options.buttonLabel = buttonLabel
-
-            // add gallery button
-            context.memo('button.' + options.name, _this.createButton());
+            context.memo('button.' + _this.name, _this.createButton());
 
             this.events = {
                 'summernote.keyup': function(we: any, e: any)
                 {
-                    _this.summernote_gallery.saveLastFocusedElement();
+                    _this.summernoteGallery.editor.saveLastFocusedElement();
                 }
             };
 
             this.initialize = function() {
-                _this.summernote_gallery.initGallery(context);
+
             };
         }
 
         return plugin;
     }
 
-    createButton() {
-        return this.summernote_gallery.createButton();
+    createButton(): JQueryStatic {
+        return this.summernoteGallery.createButton();
     }
 }
