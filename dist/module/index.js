@@ -18579,6 +18579,7 @@ var DataManager = /** @class */ (function () {
                 _this.current_page++;
                 //
                 _this.setNextFetch(parsed_response);
+                console.log('parsed_response', parsed_response);
                 _this.event.trigger('fetch', {
                     data: _this.options.formater(parsed_response.data, _this.current_page, response),
                     page: _this.current_page,

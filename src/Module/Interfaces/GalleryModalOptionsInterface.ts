@@ -28,5 +28,12 @@ export default interface GalleryModalOptionsInterface extends ModalOptionsInterf
     // the class added to the selected image on the modal
     selectClassName: string,
 
-    validations:
+    // validation rules
+    validations: {
+        selectedImages: {
+            required: {
+                message: string
+            }
+        }
+    }
 }
