@@ -4,32 +4,31 @@ on:
   push:
     branches:
       - agent/v3-lockfile
-  pull_request:
-    branches:
-      - master
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   lockfile:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: agent/v3-lockfile
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: package.json
       - name: Generate lockfile
         run: npm install --package-lock-only --ignore-scripts
       - name: Validate lockfile install
         run: npm ci --ignore-scripts
       - name: Run package checks
         run: npm run check
-      - name: Upload lockfile
-        uses: actions/upload-artifact@v6
-        with:
-          name: v3-lockfile
-          path: package-lock.json
-          if-no-files-found: error
+      - name: Commit validated lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git rm .github/workflows/generate-lockfile.yml
+          git commit -m "build: add reproducible v3 lockfile"
+          git push origin HEAD:agent/v3-lockfile
