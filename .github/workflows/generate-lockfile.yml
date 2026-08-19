@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/v3-lockfile
+  pull_request:
+    branches:
+      - master
 
 permissions:
   contents: read
