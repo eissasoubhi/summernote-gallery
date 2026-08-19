@@ -12,6 +12,16 @@ export interface GalleryData {
     images: GalleryImage[];
 }
 
+interface LegacyGalleryImage {
+    id?: unknown;
+    url?: unknown;
+    title?: unknown;
+}
+
+interface LegacyGalleryData {
+    selectedImages?: unknown;
+}
+
 function nonEmpty(value: string, label: string): string {
     const normalized = value.trim();
 
@@ -29,6 +39,10 @@ function optionalText(value: string | undefined): string | undefined {
 
     const normalized = value.trim();
     return normalized || undefined;
+}
+
+function legacyText(value: unknown): string | undefined {
+    return typeof value === 'string' ? optionalText(value) : undefined;
 }
 
 export function galleryImageKey(image: GalleryImage): string {
@@ -123,4 +137,72 @@ export function parseGallery(element: Element): GalleryData | null {
     });
 
     return images.length ? { images } : null;
+}
+
+/**
+ * Read the persisted Gallery v2 shape without mutating it.
+ *
+ * Historical Gallery markup stored the source data in `data-brickdata` and
+ * rendered a flat list of images. v3 keeps this migration opt-in so opening an
+ * editor never silently rewrites already-persisted customer content.
+ */
+export function parseLegacyGallery(element: Element): GalleryData | null {
+    if (element.getAttribute('data-snb-brick') === 'gallery') {
+        return null;
+    }
+
+    const serialized = element.getAttribute('data-brickdata');
+    if (!serialized) {
+        return null;
+    }
+
+    let legacy: LegacyGalleryData;
+
+    try {
+        legacy = JSON.parse(serialized) as LegacyGalleryData;
+    } catch (_error) {
+        return null;
+    }
+
+    if (!Array.isArray(legacy.selectedImages) || legacy.selectedImages.length === 0) {
+        return null;
+    }
+
+    const renderedImages = Array.from(element.querySelectorAll('img'));
+    const images: GalleryImage[] = [];
+
+    legacy.selectedImages.forEach((rawImage, index) => {
+        if (!rawImage || typeof rawImage !== 'object') {
+            return;
+        }
+
+        const oldImage = rawImage as LegacyGalleryImage;
+        const rendered = renderedImages[index];
+        const src = legacyText(oldImage.url) || rendered?.getAttribute('src') || undefined;
+
+        if (!src) {
+            return;
+        }
+
+        const title = legacyText(oldImage.title) || rendered?.getAttribute('title') || undefined;
+        const alt = rendered?.getAttribute('alt') || title || '';
+        const image: GalleryImage = { src, alt };
+        const id = legacyText(oldImage.id);
+
+        if (id) image.id = id;
+        if (title) image.title = title;
+
+        images.push(normalizeGalleryImage(image));
+    });
+
+    return images.length ? { images } : null;
+}
+
+/**
+ * Return a new semantic v3 Gallery node for known v2 markup.
+ * The caller decides when/where to replace the legacy element.
+ */
+export function migrateLegacyGallery(element: Element): HTMLElement | null {
+    const data = parseLegacyGallery(element);
+    return data ? renderGallery(data) : null;
 }
