@@ -18,7 +18,7 @@
     "build:js": "vite build --config vite.config.ts",
     "build:types": "tsc -p tsconfig.build.json",
     "build": "npm run build:js && npm run build:types",
-    "pack:check": "npm pack --dry-run",
+    "pack:check": "node scripts/validate-pack.mjs",
     "check": "npm run typecheck && npm run test && npm run build && npm run pack:check"
   },
   "devDependencies": {
