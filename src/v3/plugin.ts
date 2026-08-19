@@ -169,19 +169,20 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
 
     this.initialize = () => {
         const $container = context.options.dialogsInBody ? $(document.body) : $editor;
-
-        $dialog = ui.dialog({
+        const dialog = ui.dialog({
             title: pluginOptions.dialogTitle,
             body: renderDialogBody(context, pluginOptions),
             footer: `<button type="button" class="note-btn snb-gallery-v3-form__save">${escapeHtml(pluginOptions.saveText)}</button>`,
-        }).render().appendTo($container);
+        }).render().appendTo($container) as JQuery;
+
+        $dialog = dialog;
 
         $editable.on(`dblclick${EVENT_NAMESPACE}`, '[data-snb-brick="gallery"]', (event) => {
             const target = event.currentTarget;
             if (target instanceof HTMLElement) this.show(target);
         });
 
-        $dialog.on(`click${EVENT_NAMESPACE}`, '.snb-gallery-v3-form__item', (event) => {
+        dialog.on(`click${EVENT_NAMESPACE}`, '.snb-gallery-v3-form__item', (event) => {
             const index = Number($(event.currentTarget).attr('data-index'));
             const image = availableImages[index];
             if (!image) return;
@@ -193,12 +194,12 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
             renderResults();
         });
 
-        $dialog.on(`click${EVENT_NAMESPACE}`, '.snb-gallery-v3-form__search-button', () => {
-            const query = String($dialog?.find('.snb-gallery-v3-form__query').val() || '');
+        dialog.on(`click${EVENT_NAMESPACE}`, '.snb-gallery-v3-form__search-button', () => {
+            const query = String(dialog.find('.snb-gallery-v3-form__query').val() || '');
             void loadImages(query);
         });
 
-        $dialog.on(`keydown${EVENT_NAMESPACE}`, '.snb-gallery-v3-form__query', (event: JQuery.KeyDownEvent) => {
+        dialog.on(`keydown${EVENT_NAMESPACE}`, '.snb-gallery-v3-form__query', (event: JQuery.KeyDownEvent) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
                 const query = String($(event.currentTarget).val() || '');
