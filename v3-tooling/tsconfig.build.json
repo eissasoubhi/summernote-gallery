@@ -6,7 +6,7 @@
     "emitDeclarationOnly": true,
     "noEmit": false,
     "rootDir": "../src/v3",
-    "outDir": "./dist/types"
+    "outDir": "../dist/types"
   },
   "include": ["../src/v3/**/*.ts"],
   "exclude": ["./tests", "./*.ts"]
