@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "lib": ["ES2022", "DOM"],
+    "types": ["jquery", "summernote", "node"],
+    "noEmit": true
+  },
+  "include": ["../src/v3/**/*.ts", "./tests/**/*.ts", "./*.ts"]
+}
