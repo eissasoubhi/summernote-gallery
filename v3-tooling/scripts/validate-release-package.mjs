@@ -1,7 +1,9 @@
 import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const toolingDir = resolve(import.meta.dirname, '..');
 const repoDir = resolve(toolingDir, '..');
@@ -9,6 +11,12 @@ const stageDir = join(tmpdir(), `summernote-gallery-v3-package-${process.pid}`);
 
 rmSync(stageDir, { recursive: true, force: true });
 mkdirSync(stageDir, { recursive: true });
+
+const installSummernoteStub = () => {
+  const summernote = { plugins: {} };
+  globalThis.$ = { summernote };
+  return summernote;
+};
 
 try {
   cpSync(join(toolingDir, 'dist'), join(stageDir, 'dist'), { recursive: true });
@@ -58,7 +66,27 @@ try {
     throw new Error('Staged Gallery v3 package must declare jQuery and Summernote as peers.');
   }
 
-  console.log(`Validated staged public Gallery v3 tarball (${files.size} files).`);
+  const esmSummernote = installSummernoteStub();
+  const esm = await import(pathToFileURL(join(stageDir, 'dist/index.js')).href);
+  if (typeof esm.SummernoteGalleryV3 !== 'function') {
+    throw new Error('Gallery v3 ESM entrypoint does not export SummernoteGalleryV3.');
+  }
+  if (esmSummernote.plugins.summernoteGallery !== esm.SummernoteGalleryV3) {
+    throw new Error('Gallery v3 ESM entrypoint did not register its Summernote plugin.');
+  }
+
+  const cjsSummernote = installSummernoteStub();
+  const require = createRequire(import.meta.url);
+  const cjs = require(join(stageDir, 'dist/index.umd.cjs'));
+  if (typeof cjs.SummernoteGalleryV3 !== 'function') {
+    throw new Error('Gallery v3 CommonJS entrypoint does not export SummernoteGalleryV3.');
+  }
+  if (cjsSummernote.plugins.summernoteGallery !== cjs.SummernoteGalleryV3) {
+    throw new Error('Gallery v3 CommonJS entrypoint did not register its Summernote plugin.');
+  }
+
+  console.log(`Validated staged public Gallery v3 tarball (${files.size} files), ESM import and CommonJS require.`);
 } finally {
+  delete globalThis.$;
   rmSync(stageDir, { recursive: true, force: true });
 }
