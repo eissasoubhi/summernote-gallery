@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - agent/v3-vite-toolchain
+      - agent/v3-public-package
   pull_request:
     branches:
       - agent/v3-summernote-native
+      - agent/v3-vite-toolchain
 
 permissions:
   contents: read
