@@ -9,7 +9,7 @@ export default defineConfig({
       formats: ['es', 'umd'],
       fileName: (format) => format === 'es' ? 'index.js' : 'index.umd.cjs',
     },
-    outDir: fileURLToPath(new URL('./dist', import.meta.url)),
+    outDir: fileURLToPath(new URL('../dist', import.meta.url)),
     emptyOutDir: true,
     sourcemap: true,
   },
