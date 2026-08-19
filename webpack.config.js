@@ -58,7 +58,16 @@ const moduleConfig = { ...config, ...{
     },
 }};
 
+const v3Config = { ...config, ...{
+    name: "galleryV3",
+    entry: "./src/v3/index.ts",
+    output: {
+        path: path.resolve(__dirname, 'dist/v3'),
+        filename: 'summernote-gallery.js',
+    },
+}};
+
 // Return Array of Configurations
 module.exports = [
-    brickConfig, moduleConfig,
+    brickConfig, moduleConfig, v3Config,
 ];

@@ -1,0 +1,40 @@
+name: v3 toolchain
+
+on:
+  push:
+    branches:
+      - agent/v3-vite-toolchain
+      - agent/v3-public-package
+  pull_request:
+    branches:
+      - agent/v3-summernote-native
+      - agent/v3-vite-toolchain
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install isolated v3 toolchain
+        working-directory: v3-tooling
+        run: npm install
+
+      - name: Typecheck, test, build and validate package shape
+        working-directory: v3-tooling
+        run: npm run check
