@@ -9,6 +9,7 @@ on:
     branches:
       - master
       - agent/modernization-baseline
+      - agent/v3-public-package
 
 permissions:
   contents: read
@@ -30,19 +31,18 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
-          cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Build
-        run: npm run build
-
       - name: Test
         run: npm test
 
-      - name: Validate npm package
-        run: npm pack --dry-run
+      - name: Build
+        run: npm run build
+
+      - name: Validate promoted root package
+        run: npm run pack:check
