@@ -8,8 +8,6 @@ on:
   pull_request:
     branches:
       - master
-      - agent/modernization-baseline
-      - agent/v3-public-package
 
 permissions:
   contents: read
@@ -33,7 +31,7 @@ jobs:
           node-version: ${{ matrix.node }}
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Typecheck
         run: npm run typecheck
