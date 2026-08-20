@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { createStaticGallerySource } from '../../src/v3/source';
+import {
+  buildGalleryFolderTree,
+  createStaticGallerySource,
+  normalizeGalleryPath,
+} from '../../src/v3/source';
 
 describe('Gallery v3 source contract', () => {
   const source = createStaticGallerySource([
@@ -61,5 +65,37 @@ describe('Gallery v3 source contract', () => {
     });
 
     expect(page.items.map((image) => image.id)).toEqual(['city']);
+  });
+
+  it('normalizes folder paths without leaking filesystem syntax', () => {
+    expect(normalizeGalleryPath(' /products\\summer//hero.jpg ')).toBe('products/summer/hero.jpg');
+    expect(normalizeGalleryPath('./archive/./old.png')).toBe('archive/old.png');
+  });
+
+  it('builds a deterministic nested folder tree from source-only image paths', () => {
+    const tree = buildGalleryFolderTree([
+      { id: 'hero', src: '/cdn/hero.jpg', alt: 'Hero', path: 'products/summer/hero.jpg' },
+      { id: 'detail', src: '/cdn/detail.jpg', alt: 'Detail', path: 'products/summer/details/detail.jpg' },
+      { id: 'root', src: '/cdn/root.jpg', alt: 'Root' },
+      { id: 'winter', src: '/cdn/winter.jpg', alt: 'Winter', path: 'products/winter/winter.jpg' },
+    ]);
+
+    expect(tree.images.map((image) => image.id)).toEqual(['root']);
+    expect(tree.children.map((folder) => folder.path)).toEqual(['products']);
+    expect(tree.children[0]?.children.map((folder) => folder.path)).toEqual([
+      'products/summer',
+      'products/winter',
+    ]);
+    expect(tree.children[0]?.children[0]?.images.map((image) => image.id)).toEqual(['hero']);
+    expect(tree.children[0]?.children[0]?.children[0]?.path).toBe('products/summer/details');
+    expect(tree.children[0]?.children[0]?.children[0]?.images.map((image) => image.id)).toEqual(['detail']);
+  });
+
+  it('keeps folder metadata source-only and out of persisted gallery images', () => {
+    const tree = buildGalleryFolderTree([
+      { id: 'hero', src: '/cdn/hero.jpg', alt: 'Hero', path: 'products/hero.jpg' },
+    ]);
+
+    expect(tree.children[0]?.images[0]?.path).toBe('products/hero.jpg');
   });
 });
