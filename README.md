@@ -1,204 +1,166 @@
 # Summernote Gallery
 
-Summernote Gallery is a standalone [Summernote](https://github.com/summernote/summernote) plugin for selecting **server-hosted images** and inserting their real URLs into the editor instead of embedding base64 image data.
+Summernote Gallery is a standalone Summernote 0.9.x plugin for selecting images from a backend-agnostic source adapter and inserting semantic gallery markup into the editor. It can be composed by Summernote Bricks, but **Summernote Bricks is not required**.
 
-It is also one of the official plugins that can be composed by [Summernote Bricks](https://github.com/eissasoubhi/summernote-bricks), but **Summernote Bricks is not required** to use Gallery.
+## v3 source status
+
+The public `master` branch contains the **3.0.0-rc.0 source/package contract**. Gallery v3 no longer depends on the historical URL/pagination configuration model or the old shared SNB runtime described by earlier documentation.
+
+The maintained ecosystem compatibility matrix validates Gallery with Summernote 0.9.1 across BS3, BS4, BS5 and Lite builds under Chromium, Firefox and WebKit.
+
+Package publication is separate from source readiness. Verify the registry version you intend to consume instead of assuming the v3 RC has been published.
 
 ## Features
 
-- select one or more images from a remote/data source;
-- keep server URLs instead of base64 payloads;
-- paginated/infinite-scroll data loading;
-- configurable API response paths;
-- custom source formatting;
-- select-all/deselect-all controls;
-- editable Gallery brick behavior through the shared SNB runtime;
-- works as a standalone Summernote toolbar plugin.
+- standalone `summernoteGallery` toolbar plugin;
+- backend-agnostic `GallerySourceAdapter` contract;
+- asynchronous search with abort support;
+- multi-select image insertion;
+- create and edit through a Summernote-native dialog;
+- undo-aware edits through Summernote commands;
+- accessible search/status/error/listbox semantics;
+- clean semantic persisted HTML marked with `data-snb-brick="gallery"` and `data-snb-version="3"`;
+- explicit, opt-in helpers for migrating legacy Gallery markup;
+- ESM, CommonJS/browser bundle and TypeScript declarations.
 
-## Demo
+## Package contract
 
-The historical demo is available at:
+The v3 root manifest exposes:
 
-https://eissasoubhi.github.io/summernote-gallery
-
-![Summernote Gallery demo](demo.gif?raw=true "Summernote Gallery demo")
-
-## Install
-
-```bash
-npm install summernote-gallery
+```text
+dist/index.js          ESM
+dist/index.umd.cjs     CommonJS / browser bundle
+dist/types/index.d.ts  TypeScript declarations
 ```
 
-The package exposes two intended consumption paths:
+Host peer dependencies:
 
-- module entry: `dist/module/index.js`;
-- browser bundle: `dist/snb-gallery-brick.min.js`.
+```json
+{
+  "jquery": ">=3.6.0 <4",
+  "summernote": ">=0.9.1 <0.10"
+}
+```
 
-### Browser usage
+## Browser usage
 
-Load jQuery, Bootstrap and Summernote before the Gallery bundle:
+Load jQuery, the Summernote build matching your Bootstrap/Lite setup, then the Gallery bundle before initializing the editor:
 
 ```html
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css">
-
-<div id="summernote"></div>
-
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.js"></script>
-<script src="node_modules/summernote-gallery/dist/snb-gallery-brick.min.js"></script>
+<script src="path/to/jquery.js"></script>
+<script src="path/to/summernote.js"></script>
+<script src="path/to/summernote-gallery/dist/index.umd.cjs"></script>
 ```
 
-Then add `summernoteGallery` to the toolbar:
+Configure a source adapter and add `summernoteGallery` to the toolbar:
 
 ```js
+const source = {
+  async list({ query, signal }) {
+    const response = await fetch(`/api/images?q=${encodeURIComponent(query || '')}`, { signal });
+    const data = await response.json();
+
+    return {
+      items: data.items.map((image) => ({
+        src: image.url,
+        alt: image.alt,
+        title: image.title,
+        caption: image.caption
+      })),
+      nextCursor: data.nextCursor
+    };
+  }
+};
+
 $('#summernote').summernote({
   toolbar: [
     ['extensions', ['summernoteGallery']]
   ],
   summernoteGallery: {
-    source: {
-      url: '/api/images',
-      responseDataKey: 'data',
-      nextPageKey: 'links.next'
-    },
-    modal: {
-      loadOnScroll: true,
-      maxHeight: 300,
-      title: 'Image gallery'
-    },
-    buttonLabel: '<i class="fa fa-file-image-o"></i> Gallery'
+    buttonLabel: 'Gallery',
+    tooltip: 'Insert gallery',
+    dialogTitle: 'Image gallery',
+    saveText: 'Insert',
+    searchLabel: 'Search images',
+    searchText: 'Search',
+    source
   }
 });
 ```
 
-## Data source
+For static data, the module API also exposes `createStaticGallerySource(images)`.
 
-Gallery can consume local data:
+## Source adapter contract
 
-```js
-summernoteGallery: {
-  source: {
-    data: [
-      {
-        id: '1',
-        url: 'https://example.com/images/one.jpg',
-        title: 'Image one'
-      }
-    ]
-  }
+A source adapter implements:
+
+```ts
+interface GallerySourceAdapter {
+  list(request: {
+    query?: string;
+    cursor?: string;
+    signal?: AbortSignal;
+  }): Promise<{
+    items: GalleryImage[];
+    nextCursor?: string;
+  }>;
 }
 ```
 
-Or an API:
+This keeps Gallery independent from a specific REST shape, CMS, storage provider or backend framework. Hosts normalize their own API into the Gallery model.
 
-```json
-{
-  "data": [
-    {
-      "id": "1",
-      "url": "https://example.com/images/one.jpg",
-      "title": "Image one"
-    }
-  ],
-  "links": {
-    "next": "https://example.com/api/images?page=2"
-  }
-}
-```
+The source module also defines a `GalleryUploadAdapter` contract for future/host-provided upload integration; the current dialog remains source-selection focused.
 
-Use `source.responseDataKey` and `source.nextPageKey` with dot notation when your API has a different shape.
+## Persisted content
 
-A formatter can normalize an existing API without changing the server response:
+Gallery v3 stores semantic HTML rather than opaque runtime JSON, remote-response configuration or editor controls. Content helpers normalize image data and render/parse the persisted gallery structure.
 
-```js
-source: {
-  url: '/api/media',
-  responseDataKey: 'items',
-  formater(data) {
-    return data.map(item => ({
-      id: item.uuid,
-      url: item.publicUrl,
-      title: item.name
-    }));
-  }
-}
-```
+Legacy conversion remains explicit and opt-in so loading an editor does not silently rewrite stored content.
 
-## Main options
+## Module usage
 
-| Option | Purpose | Default |
-| --- | --- | --- |
-| `source.data` | Inline image records | `[]` |
-| `source.url` | Remote image endpoint | `null` |
-| `source.responseDataKey` | Response path containing images | `data` |
-| `source.nextPageKey` | Response path containing next-page URL | `links.next` |
-| `source.formater` | Normalize source records | identity function |
-| `modal.loadOnScroll` | Load next page near scroll bottom | `false` |
-| `modal.height` | Modal body height | `500` |
-| `modal.title` | Modal title | `summernote image gallery` |
-| `modal.closeText` | Close button label | `Close` |
-| `modal.saveText` | Add/save button label | `Add` |
-| `modal.selectAllText` | Select-all label | `Select all` |
-| `modal.deselectAllText` | Deselect-all label | `Deselect all` |
-| `buttonLabel` | Toolbar button HTML/text | `SN Gallery` |
+The module entry exports the Summernote plugin, gallery content helpers and source-adapter helpers. Typical integrations can import the adapter types or `createStaticGallerySource` and then configure the normal Summernote plugin lifecycle.
 
-The source TypeScript interfaces under `src/Module/Interfaces` are the canonical reference while the documentation and compatibility matrix are being modernized.
-
-## Compatibility
-
-The existing browser demo is based on Summernote 0.8.18 + Bootstrap 3. That is the **known historical integration**, not a claim that newer combinations are unsupported.
-
-The modernization roadmap is adding an explicit browser matrix. Bootstrap 5 must not be advertised as supported until the shared SNB modal runtime no longer relies exclusively on Bootstrap's jQuery modal API.
-
-See the ecosystem roadmap in [summernote-bricks#3](https://github.com/eissasoubhi/summernote-bricks/issues/3).
-
-## Architecture
-
-Gallery owns Gallery-specific concerns: image source loading, selection state, Gallery modal behavior and Gallery templates.
-
-Reusable editing, validation, modal and extension infrastructure is provided by `snb-components`. Gallery must stay independently usable and must not depend on another concrete brick.
+The browser bundle self-registers `summernoteGallery` when loaded after Summernote.
 
 ## Development
 
-Use an active Node LTS release. CI currently validates Node 22 and 24.
-
 ```bash
 npm ci
-npm run typecheck
-npm run build
-npm test
-npm pack --dry-run
+npm run check
 ```
 
-Run the demo locally:
+`npm run check` performs strict TypeScript checking, Vitest tests, Vite/TypeScript builds and package-shape validation. The cross-repository Bricks compatibility harness additionally tests the packed Gallery artifact against the supported Summernote/browser matrix.
 
-```bash
-npm run start
-```
+## Compatibility
 
-Watch TypeScript changes:
+The maintained reference is Summernote **0.9.1** with:
 
-```bash
-npm run dev
-```
+- Bootstrap 3 build;
+- Bootstrap 4 build;
+- Bootstrap 5 build;
+- Summernote Lite;
+- Chromium, Firefox and WebKit.
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for contribution rules and [`SECURITY.md`](SECURITY.md) for vulnerability reporting.
+The historical 0.8.18 demos, old `dist/snb-gallery-brick.min.js` path and URL/pagination options are legacy references, not the v3 contract.
 
-## Roadmap ideas
+## Ecosystem
 
-The existing issues already point to useful product improvements after the platform baseline is stable:
+- `summernote-gallery` — this standalone backend-agnostic Gallery plugin;
+- `summernote-heading` — standalone semantic Heading plugin;
+- `summernote-bricks` — optional composer of registered plugin buttons and central browser compatibility harness;
+- `SNB-components` — independent optional shared core; Gallery does not currently depend on it.
 
-- Bootstrap 5 adapter support;
-- image upload through an application-provided adapter;
-- folder/navigation support;
-- search, filters and view modes;
-- accessibility and keyboard navigation;
-- browser integration coverage.
+See the Summernote Bricks roadmap issue #3 for ecosystem release-readiness status.
 
-These should be implemented as small capabilities/adapters instead of coupling Gallery to a particular backend framework.
+## Feature requests
+
+Upload UI, folder grouping and richer filtering/view modes remain separate feature requests. They are not required for the current v3 release-readiness contract.
+
+## Contributing, security and release
+
+See `CONTRIBUTING.md`, `SECURITY.md` and `RELEASING.md`.
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+MIT — see `LICENSE`.
