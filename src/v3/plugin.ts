@@ -10,6 +10,8 @@ import { GallerySourceAdapter } from './source';
 const PLUGIN_NAME = 'summernoteGallery';
 const EVENT_NAMESPACE = '.snbGalleryV3';
 
+export type GalleryViewMode = 'grid' | 'gallery';
+
 interface GalleryV3Options {
     buttonLabel: string;
     tooltip: string;
@@ -17,6 +19,9 @@ interface GalleryV3Options {
     saveText: string;
     searchLabel: string;
     searchText: string;
+    gridViewText: string;
+    galleryViewText: string;
+    defaultView: GalleryViewMode;
     loadingText: string;
     emptyText: string;
     errorText: string;
@@ -30,6 +35,9 @@ const defaultOptions: GalleryV3Options = {
     saveText: 'Insert',
     searchLabel: 'Search images',
     searchText: 'Search',
+    gridViewText: 'Grid',
+    galleryViewText: 'Gallery',
+    defaultView: 'grid',
     loadingText: 'Loading images…',
     emptyText: 'No images found.',
     errorText: 'Unable to load images.',
@@ -50,6 +58,25 @@ function fieldId(context: any, suffix: string): string {
     return `snb-gallery-${editorId}-${suffix}`;
 }
 
+export function normalizeGalleryViewMode(value: unknown): GalleryViewMode {
+    return value === 'gallery' ? 'gallery' : 'grid';
+}
+
+export function applyGalleryViewMode(results: HTMLElement, mode: GalleryViewMode): void {
+    results.dataset.view = mode;
+
+    if (mode === 'grid') {
+        results.style.display = 'grid';
+        results.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
+        results.style.gap = '0.5rem';
+    } else {
+        results.style.display = 'flex';
+        results.style.flexDirection = 'column';
+        results.style.gap = '0.5rem';
+        results.style.removeProperty('grid-template-columns');
+    }
+}
+
 function renderDialogBody(context: any, options: GalleryV3Options): string {
     const searchId = fieldId(context, 'search');
 
@@ -59,6 +86,10 @@ function renderDialogBody(context: any, options: GalleryV3Options): string {
         `<label for="${searchId}">${escapeHtml(options.searchLabel)}</label>`,
         `<input id="${searchId}" class="snb-gallery-v3-form__query" type="search" autocomplete="off">`,
         `<button type="button" class="note-btn snb-gallery-v3-form__search-button">${escapeHtml(options.searchText)}</button>`,
+        '</div>',
+        '<div class="snb-gallery-v3-form__views" role="group" aria-label="View mode">',
+        `<button type="button" class="note-btn snb-gallery-v3-form__view" data-view="grid" aria-pressed="false">${escapeHtml(options.gridViewText)}</button>`,
+        `<button type="button" class="note-btn snb-gallery-v3-form__view" data-view="gallery" aria-pressed="false">${escapeHtml(options.galleryViewText)}</button>`,
         '</div>',
         '<p class="snb-gallery-v3-form__status" role="status" aria-live="polite"></p>',
         '<p class="snb-gallery-v3-form__error" role="alert" aria-live="assertive"></p>',
@@ -89,6 +120,7 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
     let availableImages: GalleryImage[] = [];
     let selectedImages = new Map<string, GalleryImage>();
     let activeRequest: AbortController | null = null;
+    let viewMode = normalizeGalleryViewMode(pluginOptions.defaultView);
 
     context.memo(`button.${PLUGIN_NAME}`, () => {
         return ui.button({
@@ -98,6 +130,17 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
         }).render();
     });
 
+    const applyView = () => {
+        if (!$dialog) return;
+        const results = $dialog.find('.snb-gallery-v3-form__results').get(0);
+        if (results instanceof HTMLElement) applyGalleryViewMode(results, viewMode);
+
+        $dialog.find('.snb-gallery-v3-form__view').each((_index, element) => {
+            const active = $(element).attr('data-view') === viewMode;
+            $(element).attr('aria-pressed', active ? 'true' : 'false');
+        });
+    };
+
     const renderResults = () => {
         if (!$dialog) return;
 
@@ -106,6 +149,7 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
         }).join('');
 
         $dialog.find('.snb-gallery-v3-form__results').html(markup);
+        applyView();
         $dialog.find('.snb-gallery-v3-form__status').text(
             availableImages.length ? '' : pluginOptions.emptyText,
         );
@@ -194,6 +238,11 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
             renderResults();
         });
 
+        dialog.on(`click${EVENT_NAMESPACE}`, '.snb-gallery-v3-form__view', (event) => {
+            viewMode = normalizeGalleryViewMode($(event.currentTarget).attr('data-view'));
+            applyView();
+        });
+
         dialog.on(`click${EVENT_NAMESPACE}`, '.snb-gallery-v3-form__search-button', () => {
             const query = String(dialog.find('.snb-gallery-v3-form__query').val() || '');
             void loadImages(query);
@@ -231,6 +280,7 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
         editingTarget = target || null;
         availableImages = [];
         selectedImages = new Map<string, GalleryImage>();
+        viewMode = normalizeGalleryViewMode(pluginOptions.defaultView);
 
         if (editingTarget) {
             const existing = parseGallery(editingTarget);
@@ -240,6 +290,7 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
         $dialog.find('.snb-gallery-v3-form__query').val('');
         $dialog.find('.snb-gallery-v3-form__error').text('');
         $dialog.find('.snb-gallery-v3-form__results').empty();
+        applyView();
 
         const $save = $dialog.find('.snb-gallery-v3-form__save');
         $save.off(`click${EVENT_NAMESPACE}`).on(`click${EVENT_NAMESPACE}`, (event: JQuery.ClickEvent) => {
