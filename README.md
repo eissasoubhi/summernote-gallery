@@ -14,11 +14,15 @@ Package publication is separate from source readiness. Verify the registry versi
 
 - standalone `summernoteGallery` toolbar plugin;
 - backend-agnostic `GallerySourceAdapter` contract;
+- optional host-provided `GalleryUploadAdapter` for multi-file uploads;
 - asynchronous search with abort support;
+- source-only media type and creation-date filters;
+- accessible Grid/Gallery view modes;
 - multi-select image insertion;
 - create and edit through a Summernote-native dialog;
 - undo-aware edits through Summernote commands;
 - accessible search/status/error/listbox semantics;
+- source-only folder metadata and deterministic folder-tree helpers;
 - clean semantic persisted HTML marked with `data-snb-brick="gallery"` and `data-snb-version="3"`;
 - explicit, opt-in helpers for migrating legacy Gallery markup;
 - ESM, CommonJS/browser bundle and TypeScript declarations.
@@ -56,16 +60,26 @@ Configure a source adapter and add `summernoteGallery` to the toolbar:
 
 ```js
 const source = {
-  async list({ query, signal }) {
-    const response = await fetch(`/api/images?q=${encodeURIComponent(query || '')}`, { signal });
+  async list({ query, filters, signal }) {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (filters?.mediaType) params.set('mediaType', filters.mediaType);
+    if (filters?.createdFrom) params.set('createdFrom', filters.createdFrom);
+    if (filters?.createdTo) params.set('createdTo', filters.createdTo);
+
+    const response = await fetch(`/api/images?${params}`, { signal });
     const data = await response.json();
 
     return {
       items: data.items.map((image) => ({
+        id: image.id,
         src: image.url,
         alt: image.alt,
         title: image.title,
-        caption: image.caption
+        caption: image.caption,
+        createdAt: image.createdAt,
+        mediaType: image.mediaType,
+        path: image.path
       })),
       nextCursor: data.nextCursor
     };
@@ -83,6 +97,7 @@ $('#summernote').summernote({
     saveText: 'Insert',
     searchLabel: 'Search images',
     searchText: 'Search',
+    defaultView: 'grid',
     source
   }
 });
@@ -98,18 +113,58 @@ A source adapter implements:
 interface GallerySourceAdapter {
   list(request: {
     query?: string;
+    filters?: {
+      mediaType?: string;
+      createdFrom?: string;
+      createdTo?: string;
+    };
     cursor?: string;
     signal?: AbortSignal;
   }): Promise<{
-    items: GalleryImage[];
+    items: GallerySourceImage[];
     nextCursor?: string;
   }>;
 }
 ```
 
+`GallerySourceImage` extends the persisted image model with optional source-only metadata such as `createdAt`, `mediaType` and `path`. These fields are available to search/filter/folder helpers but are not written into persisted Gallery HTML.
+
 This keeps Gallery independent from a specific REST shape, CMS, storage provider or backend framework. Hosts normalize their own API into the Gallery model.
 
-The source module also defines a `GalleryUploadAdapter` contract for future/host-provided upload integration; the current dialog remains source-selection focused.
+## Optional upload adapter
+
+Upload controls appear only when the host supplies `summernoteGallery.upload`. Gallery does not know or require an endpoint, storage provider, authentication scheme or server framework.
+
+```js
+const upload = {
+  async upload(files, signal) {
+    const body = new FormData();
+    files.forEach((file) => body.append('images', file));
+
+    const response = await fetch('/api/images', {
+      method: 'POST',
+      body,
+      signal
+    });
+    const data = await response.json();
+
+    return data.items.map((image) => ({
+      id: image.id,
+      src: image.url,
+      alt: image.alt,
+      title: image.title,
+      caption: image.caption
+    }));
+  }
+};
+
+$('#summernote').summernote({
+  toolbar: [['extensions', ['summernoteGallery']]],
+  summernoteGallery: { source, upload }
+});
+```
+
+The adapter receives the selected `File[]` and an `AbortSignal`. Returned images are normalized, added to the current dialog results and selected for insertion. Closing/destroying the dialog aborts in-flight uploads. File objects, credentials, transport state and source-only metadata are never persisted by Gallery.
 
 ## Persisted content
 
@@ -119,7 +174,7 @@ Legacy conversion remains explicit and opt-in so loading an editor does not sile
 
 ## Module usage
 
-The module entry exports the Summernote plugin, gallery content helpers and source-adapter helpers. Typical integrations can import the adapter types or `createStaticGallerySource` and then configure the normal Summernote plugin lifecycle.
+The module entry exports the Summernote plugin, gallery content helpers and source-adapter helpers. Typical integrations can import adapter types or `createStaticGallerySource` and then configure the normal Summernote plugin lifecycle.
 
 The browser bundle self-registers `summernoteGallery` when loaded after Summernote.
 
@@ -155,7 +210,7 @@ See the Summernote Bricks roadmap issue #3 for ecosystem release-readiness statu
 
 ## Feature requests
 
-Upload UI, folder grouping and richer filtering/view modes remain separate feature requests. They are not required for the current v3 release-readiness contract.
+Dialog-level folder navigation remains active follow-up work. Upload, text search, media/date filtering and Grid/Gallery view modes are already implemented on the v3 source line.
 
 ## Contributing, security and release
 
