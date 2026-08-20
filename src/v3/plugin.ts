@@ -6,7 +6,14 @@ import {
     parseGallery,
     renderGallery,
 } from './gallery';
-import { GallerySourceAdapter, GalleryUploadAdapter } from './source';
+import {
+    buildGalleryFolderTree,
+    filterGalleryImagesByFolder,
+    findGalleryFolderNode,
+    GallerySourceAdapter,
+    GallerySourceImage,
+    GalleryUploadAdapter,
+} from './source';
 
 const PLUGIN_NAME = 'summernoteGallery';
 const EVENT_NAMESPACE = '.snbGalleryV3';
@@ -30,6 +37,9 @@ interface GalleryV3Options {
     uploadText: string;
     uploadingText: string;
     uploadErrorText: string;
+    folderLabel: string;
+    folderRootText: string;
+    folderUpText: string;
     source: GallerySourceAdapter | null;
     upload: GalleryUploadAdapter | null;
 }
@@ -51,6 +61,9 @@ const defaultOptions: GalleryV3Options = {
     uploadText: 'Upload',
     uploadingText: 'Uploading images…',
     uploadErrorText: 'Unable to upload images.',
+    folderLabel: 'Folders',
+    folderRootText: 'All images',
+    folderUpText: 'Up',
     source: null,
     upload: null,
 };
@@ -107,6 +120,10 @@ function renderDialogBody(context: any, options: GalleryV3Options): string {
         `<button type="button" class="note-btn snb-gallery-v3-form__search-button">${escapeHtml(options.searchText)}</button>`,
         '</div>',
         upload,
+        `<nav class="snb-gallery-v3-form__folders" aria-label="${escapeHtml(options.folderLabel)}" hidden>`,
+        '<span class="snb-gallery-v3-form__folder-current"></span>',
+        '<div class="snb-gallery-v3-form__folder-actions"></div>',
+        '</nav>',
         '<div class="snb-gallery-v3-form__views" role="group" aria-label="View mode">',
         `<button type="button" class="note-btn snb-gallery-v3-form__view" data-view="grid" aria-pressed="false">${escapeHtml(options.gridViewText)}</button>`,
         `<button type="button" class="note-btn snb-gallery-v3-form__view" data-view="gallery" aria-pressed="false">${escapeHtml(options.galleryViewText)}</button>`,
@@ -137,11 +154,13 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
     const $editor = context.layoutInfo.editor as JQuery;
     let $dialog: JQuery | null = null;
     let editingTarget: HTMLElement | null = null;
-    let availableImages: GalleryImage[] = [];
+    let availableImages: GallerySourceImage[] = [];
+    let visibleImages: GallerySourceImage[] = [];
     let selectedImages = new Map<string, GalleryImage>();
     let activeRequest: AbortController | null = null;
     let activeUpload: AbortController | null = null;
     let viewMode = normalizeGalleryViewMode(pluginOptions.defaultView);
+    let currentFolderPath = '';
 
     context.memo(`button.${PLUGIN_NAME}`, () => {
         return ui.button({
@@ -162,17 +181,64 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
         });
     };
 
+    const renderFolderNavigation = () => {
+        if (!$dialog) return;
+
+        const $folders = $dialog.find('.snb-gallery-v3-form__folders');
+        const tree = buildGalleryFolderTree(availableImages);
+        const hasFolders = tree.children.length > 0;
+
+        if (!hasFolders) {
+            currentFolderPath = '';
+            visibleImages = availableImages;
+            $folders.prop('hidden', true);
+            $folders.find('.snb-gallery-v3-form__folder-current').text('');
+            $folders.find('.snb-gallery-v3-form__folder-actions').empty();
+            return;
+        }
+
+        let node = findGalleryFolderNode(tree, currentFolderPath);
+        if (!node) {
+            currentFolderPath = '';
+            node = tree;
+        }
+
+        visibleImages = filterGalleryImagesByFolder(availableImages, node.path);
+        const segments = node.path ? node.path.split('/') : [];
+        const parentPath = segments.slice(0, -1).join('/');
+        const actions: string[] = [
+            `<button type="button" class="note-btn snb-gallery-v3-form__folder" data-folder-path=""${node.path ? '' : ' aria-current="location"'}>${escapeHtml(pluginOptions.folderRootText)}</button>`,
+        ];
+
+        if (node.path) {
+            actions.push(
+                `<button type="button" class="note-btn snb-gallery-v3-form__folder" data-folder-path="${escapeHtml(parentPath)}">${escapeHtml(pluginOptions.folderUpText)}</button>`,
+            );
+        }
+
+        node.children.forEach((child) => {
+            actions.push(
+                `<button type="button" class="note-btn snb-gallery-v3-form__folder" data-folder-path="${escapeHtml(child.path)}">${escapeHtml(child.name)}</button>`,
+            );
+        });
+
+        $folders.prop('hidden', false);
+        $folders.find('.snb-gallery-v3-form__folder-current').text(node.path || pluginOptions.folderRootText);
+        $folders.find('.snb-gallery-v3-form__folder-actions').html(actions.join(''));
+    };
+
     const renderResults = () => {
         if (!$dialog) return;
 
-        const markup = availableImages.map((image, index) => {
+        renderFolderNavigation();
+        const markup = visibleImages.map((image, index) => {
             return renderResultItem(image, index, selectedImages.has(galleryImageKey(image)));
         }).join('');
 
         $dialog.find('.snb-gallery-v3-form__results').html(markup);
         applyView();
         $dialog.find('.snb-gallery-v3-form__status').text(
-            availableImages.length ? '' : pluginOptions.emptyText,
+            visibleImages.length ? '' : pluginOptions.emptyText,
         );
     };
 
@@ -188,6 +254,7 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
 
         activeRequest?.abort();
         activeRequest = new AbortController();
+        currentFolderPath = '';
         $dialog.find('.snb-gallery-v3-form__error').text('');
         $dialog.find('.snb-gallery-v3-form__status').text(pluginOptions.loadingText);
         $dialog.find('.snb-gallery-v3-form__results').empty();
@@ -226,7 +293,7 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
             const uploaded = await pluginOptions.upload.upload(files, activeUpload.signal);
             if (activeUpload.signal.aborted) return;
 
-            const normalized = (Array.isArray(uploaded) ? uploaded : []).map(normalizeGalleryImage);
+            const normalized = (Array.isArray(uploaded) ? uploaded : []).map(normalizeGalleryImage) as GallerySourceImage[];
             const byKey = new Map(availableImages.map((image) => [galleryImageKey(image), image]));
 
             normalized.forEach((image) => {
@@ -236,6 +303,7 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
             });
 
             availableImages = Array.from(byKey.values());
+            currentFolderPath = '';
             input.value = '';
             renderResults();
         } catch (error) {
@@ -290,13 +358,18 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
 
         dialog.on(`click${EVENT_NAMESPACE}`, '.snb-gallery-v3-form__item', (event) => {
             const index = Number($(event.currentTarget).attr('data-index'));
-            const image = availableImages[index];
+            const image = visibleImages[index];
             if (!image) return;
 
             const key = galleryImageKey(image);
             if (selectedImages.has(key)) selectedImages.delete(key);
             else selectedImages.set(key, image);
 
+            renderResults();
+        });
+
+        dialog.on(`click${EVENT_NAMESPACE}`, '.snb-gallery-v3-form__folder', (event) => {
+            currentFolderPath = String($(event.currentTarget).attr('data-folder-path') || '');
             renderResults();
         });
 
@@ -338,7 +411,9 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
         }
 
         availableImages = [];
+        visibleImages = [];
         selectedImages.clear();
+        currentFolderPath = '';
         editingTarget = null;
     };
 
@@ -347,8 +422,10 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
 
         editingTarget = target || null;
         availableImages = [];
+        visibleImages = [];
         selectedImages = new Map<string, GalleryImage>();
         viewMode = normalizeGalleryViewMode(pluginOptions.defaultView);
+        currentFolderPath = '';
 
         if (editingTarget) {
             const existing = parseGallery(editingTarget);
@@ -360,6 +437,7 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
         $dialog.find('.snb-gallery-v3-form__upload-button').prop('disabled', false);
         $dialog.find('.snb-gallery-v3-form__error').text('');
         $dialog.find('.snb-gallery-v3-form__results').empty();
+        $dialog.find('.snb-gallery-v3-form__folders').prop('hidden', true);
         applyView();
 
         const $save = $dialog.find('.snb-gallery-v3-form__save');
