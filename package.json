@@ -26,6 +26,7 @@
     "build:types": "tsc -p v3-tooling/tsconfig.build.json",
     "build": "npm run build:js && npm run build:types",
     "pack:check": "node v3-tooling/scripts/validate-root-package.mjs",
+    "release:tag-check": "node v3-tooling/scripts/validate-release-tag.mjs",
     "check": "npm run typecheck && npm run test && npm run build && npm run pack:check"
   },
   "devDependencies": {
