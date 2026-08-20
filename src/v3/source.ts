@@ -64,6 +64,34 @@ export function normalizeGalleryPath(value: string | undefined): string {
         .join('/');
 }
 
+export function galleryFolderPath(image: GallerySourceImage): string {
+    const path = normalizeGalleryPath(image.path);
+    if (!path) return '';
+    const segments = path.split('/');
+    return segments.length > 1 ? segments.slice(0, -1).join('/') : '';
+}
+
+export function filterGalleryImagesByFolder(images: GallerySourceImage[], folderPath: string): GallerySourceImage[] {
+    const normalizedFolder = normalizeGalleryPath(folderPath);
+    return images.filter((image) => galleryFolderPath(image) === normalizedFolder);
+}
+
+export function findGalleryFolderNode(root: GalleryFolderNode, folderPath: string): GalleryFolderNode | null {
+    const normalizedFolder = normalizeGalleryPath(folderPath);
+    if (!normalizedFolder) return root;
+
+    const segments = normalizedFolder.split('/');
+    let current = root;
+
+    for (const segment of segments) {
+        const next = current.children.find((child) => child.name === segment);
+        if (!next) return null;
+        current = next;
+    }
+
+    return current;
+}
+
 export function buildGalleryFolderTree(images: GallerySourceImage[]): GalleryFolderNode {
     const root: GalleryFolderNode = { name: '', path: '', children: [], images: [] };
     const nodes = new Map<string, GalleryFolderNode>([['', root]]);
