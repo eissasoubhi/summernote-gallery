@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   buildGalleryFolderTree,
   createStaticGallerySource,
+  filterGalleryImagesByFolder,
+  findGalleryFolderNode,
+  galleryFolderPath,
   normalizeGalleryPath,
 } from '../../src/v3/source';
 
@@ -89,6 +92,22 @@ describe('Gallery v3 source contract', () => {
     expect(tree.children[0]?.children[0]?.images.map((image) => image.id)).toEqual(['hero']);
     expect(tree.children[0]?.children[0]?.children[0]?.path).toBe('products/summer/details');
     expect(tree.children[0]?.children[0]?.children[0]?.images.map((image) => image.id)).toEqual(['detail']);
+  });
+
+  it('resolves folders and exact-folder images for dialog navigation', () => {
+    const images = [
+      { id: 'hero', src: '/hero.jpg', alt: 'Hero', path: 'products/summer/hero.jpg' },
+      { id: 'detail', src: '/detail.jpg', alt: 'Detail', path: 'products/summer/details/detail.jpg' },
+      { id: 'winter', src: '/winter.jpg', alt: 'Winter', path: 'products/winter/winter.jpg' },
+      { id: 'root', src: '/root.jpg', alt: 'Root' },
+    ];
+    const tree = buildGalleryFolderTree(images);
+
+    expect(galleryFolderPath(images[0]!)).toBe('products/summer');
+    expect(findGalleryFolderNode(tree, 'products/summer')?.children.map((folder) => folder.name)).toEqual(['details']);
+    expect(filterGalleryImagesByFolder(images, 'products/summer').map((image) => image.id)).toEqual(['hero']);
+    expect(filterGalleryImagesByFolder(images, '').map((image) => image.id)).toEqual(['root']);
+    expect(findGalleryFolderNode(tree, 'missing')).toBeNull();
   });
 
   it('keeps folder metadata source-only and out of persisted gallery images', () => {
