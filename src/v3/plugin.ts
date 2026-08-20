@@ -2,10 +2,11 @@ import {
     GalleryData,
     GalleryImage,
     galleryImageKey,
+    normalizeGalleryImage,
     parseGallery,
     renderGallery,
 } from './gallery';
-import { GallerySourceAdapter } from './source';
+import { GallerySourceAdapter, GalleryUploadAdapter } from './source';
 
 const PLUGIN_NAME = 'summernoteGallery';
 const EVENT_NAMESPACE = '.snbGalleryV3';
@@ -25,7 +26,12 @@ interface GalleryV3Options {
     loadingText: string;
     emptyText: string;
     errorText: string;
+    uploadLabel: string;
+    uploadText: string;
+    uploadingText: string;
+    uploadErrorText: string;
     source: GallerySourceAdapter | null;
+    upload: GalleryUploadAdapter | null;
 }
 
 const defaultOptions: GalleryV3Options = {
@@ -41,7 +47,12 @@ const defaultOptions: GalleryV3Options = {
     loadingText: 'Loading images…',
     emptyText: 'No images found.',
     errorText: 'Unable to load images.',
+    uploadLabel: 'Upload images',
+    uploadText: 'Upload',
+    uploadingText: 'Uploading images…',
+    uploadErrorText: 'Unable to upload images.',
     source: null,
+    upload: null,
 };
 
 function escapeHtml(value: string): string {
@@ -79,6 +90,14 @@ export function applyGalleryViewMode(results: HTMLElement, mode: GalleryViewMode
 
 function renderDialogBody(context: any, options: GalleryV3Options): string {
     const searchId = fieldId(context, 'search');
+    const uploadId = fieldId(context, 'upload');
+    const upload = options.upload ? [
+        '<div class="snb-gallery-v3-form__upload">',
+        `<label for="${uploadId}">${escapeHtml(options.uploadLabel)}</label>`,
+        `<input id="${uploadId}" class="snb-gallery-v3-form__upload-input" type="file" accept="image/*" multiple>`,
+        `<button type="button" class="note-btn snb-gallery-v3-form__upload-button">${escapeHtml(options.uploadText)}</button>`,
+        '</div>',
+    ].join('') : '';
 
     return [
         '<div class="snb-gallery-v3-form">',
@@ -87,6 +106,7 @@ function renderDialogBody(context: any, options: GalleryV3Options): string {
         `<input id="${searchId}" class="snb-gallery-v3-form__query" type="search" autocomplete="off">`,
         `<button type="button" class="note-btn snb-gallery-v3-form__search-button">${escapeHtml(options.searchText)}</button>`,
         '</div>',
+        upload,
         '<div class="snb-gallery-v3-form__views" role="group" aria-label="View mode">',
         `<button type="button" class="note-btn snb-gallery-v3-form__view" data-view="grid" aria-pressed="false">${escapeHtml(options.gridViewText)}</button>`,
         `<button type="button" class="note-btn snb-gallery-v3-form__view" data-view="gallery" aria-pressed="false">${escapeHtml(options.galleryViewText)}</button>`,
@@ -120,6 +140,7 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
     let availableImages: GalleryImage[] = [];
     let selectedImages = new Map<string, GalleryImage>();
     let activeRequest: AbortController | null = null;
+    let activeUpload: AbortController | null = null;
     let viewMode = normalizeGalleryViewMode(pluginOptions.defaultView);
 
     context.memo(`button.${PLUGIN_NAME}`, () => {
@@ -188,6 +209,47 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
         }
     };
 
+    const uploadImages = async () => {
+        if (!$dialog || !pluginOptions.upload || typeof pluginOptions.upload.upload !== 'function') return;
+
+        const input = $dialog.find('.snb-gallery-v3-form__upload-input').get(0);
+        if (!(input instanceof HTMLInputElement) || !input.files || input.files.length === 0) return;
+
+        activeUpload?.abort();
+        activeUpload = new AbortController();
+        const files = Array.from(input.files);
+        $dialog.find('.snb-gallery-v3-form__error').text('');
+        $dialog.find('.snb-gallery-v3-form__status').text(pluginOptions.uploadingText);
+        $dialog.find('.snb-gallery-v3-form__upload-button').prop('disabled', true);
+
+        try {
+            const uploaded = await pluginOptions.upload.upload(files, activeUpload.signal);
+            if (activeUpload.signal.aborted) return;
+
+            const normalized = (Array.isArray(uploaded) ? uploaded : []).map(normalizeGalleryImage);
+            const byKey = new Map(availableImages.map((image) => [galleryImageKey(image), image]));
+
+            normalized.forEach((image) => {
+                const key = galleryImageKey(image);
+                byKey.set(key, image);
+                selectedImages.set(key, image);
+            });
+
+            availableImages = Array.from(byKey.values());
+            input.value = '';
+            renderResults();
+        } catch (error) {
+            if (activeUpload.signal.aborted) return;
+            const message = error instanceof Error && error.message ? error.message : pluginOptions.uploadErrorText;
+            $dialog.find('.snb-gallery-v3-form__status').text('');
+            $dialog.find('.snb-gallery-v3-form__error').text(message);
+        } finally {
+            if (!activeUpload?.signal.aborted) {
+                $dialog?.find('.snb-gallery-v3-form__upload-button').prop('disabled', false);
+            }
+        }
+    };
+
     const save = () => {
         if (!$dialog || selectedImages.size === 0) {
             $dialog?.find('.snb-gallery-v3-form__error').text('Select at least one image.');
@@ -248,6 +310,10 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
             void loadImages(query);
         });
 
+        dialog.on(`click${EVENT_NAMESPACE}`, '.snb-gallery-v3-form__upload-button', () => {
+            void uploadImages();
+        });
+
         dialog.on(`keydown${EVENT_NAMESPACE}`, '.snb-gallery-v3-form__query', (event: JQuery.KeyDownEvent) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -260,6 +326,8 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
     this.destroy = () => {
         activeRequest?.abort();
         activeRequest = null;
+        activeUpload?.abort();
+        activeUpload = null;
         $editable.off(EVENT_NAMESPACE);
 
         if ($dialog) {
@@ -288,6 +356,8 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
         }
 
         $dialog.find('.snb-gallery-v3-form__query').val('');
+        $dialog.find('.snb-gallery-v3-form__upload-input').val('');
+        $dialog.find('.snb-gallery-v3-form__upload-button').prop('disabled', false);
         $dialog.find('.snb-gallery-v3-form__error').text('');
         $dialog.find('.snb-gallery-v3-form__results').empty();
         applyView();
@@ -306,6 +376,8 @@ export default function SummernoteGalleryV3(this: any, context: any): void {
         ui.onDialogHidden($dialog, () => {
             activeRequest?.abort();
             activeRequest = null;
+            activeUpload?.abort();
+            activeUpload = null;
             $save.off(`click${EVENT_NAMESPACE}`);
             editingTarget = null;
         });
