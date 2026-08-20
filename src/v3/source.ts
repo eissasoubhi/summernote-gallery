@@ -3,6 +3,7 @@ import { GalleryImage, normalizeGalleryImage } from './gallery';
 export interface GallerySourceImage extends GalleryImage {
     createdAt?: string;
     mediaType?: string;
+    path?: string;
 }
 
 export interface GallerySourceFilters {
@@ -31,15 +32,74 @@ export interface GalleryUploadAdapter {
     upload(files: File[], signal?: AbortSignal): Promise<GalleryImage[]>;
 }
 
+export interface GalleryFolderNode {
+    name: string;
+    path: string;
+    children: GalleryFolderNode[];
+    images: GallerySourceImage[];
+}
+
 function normalizeSourceImage(image: GallerySourceImage): GallerySourceImage {
     const normalized: GallerySourceImage = normalizeGalleryImage(image);
     const createdAt = typeof image.createdAt === 'string' ? image.createdAt.trim() : '';
     const mediaType = typeof image.mediaType === 'string' ? image.mediaType.trim().toLocaleLowerCase() : '';
+    const path = normalizeGalleryPath(image.path);
 
     if (createdAt) normalized.createdAt = createdAt;
     if (mediaType) normalized.mediaType = mediaType;
+    if (path) normalized.path = path;
 
     return normalized;
+}
+
+export function normalizeGalleryPath(value: string | undefined): string {
+    if (typeof value !== 'string') return '';
+
+    return value
+        .trim()
+        .replace(/\\/g, '/')
+        .split('/')
+        .map((segment) => segment.trim())
+        .filter((segment) => Boolean(segment) && segment !== '.')
+        .join('/');
+}
+
+export function buildGalleryFolderTree(images: GallerySourceImage[]): GalleryFolderNode {
+    const root: GalleryFolderNode = { name: '', path: '', children: [], images: [] };
+    const nodes = new Map<string, GalleryFolderNode>([['', root]]);
+
+    for (const input of images) {
+        const image = normalizeSourceImage(input);
+        const path = image.path || '';
+        const segments = path.split('/').filter(Boolean);
+        const folderSegments = segments.slice(0, -1);
+        let parent = root;
+        let currentPath = '';
+
+        for (const segment of folderSegments) {
+            currentPath = currentPath ? `${currentPath}/${segment}` : segment;
+            let node = nodes.get(currentPath);
+
+            if (!node) {
+                node = { name: segment, path: currentPath, children: [], images: [] };
+                nodes.set(currentPath, node);
+                parent.children.push(node);
+            }
+
+            parent = node;
+        }
+
+        parent.images.push(image);
+    }
+
+    const sortNode = (node: GalleryFolderNode): void => {
+        node.children.sort((a, b) => a.name.localeCompare(b.name));
+        node.images.sort((a, b) => (a.path || a.src).localeCompare(b.path || b.src));
+        node.children.forEach(sortNode);
+    };
+
+    sortNode(root);
+    return root;
 }
 
 function timestamp(value: string | undefined): number | undefined {
@@ -63,7 +123,7 @@ export function createStaticGallerySource(images: GallerySourceImage[]): Gallery
             const createdTo = timestamp(request.filters?.createdTo);
 
             const items = normalized.filter((image) => {
-                if (query && ![image.alt, image.title, image.caption, image.src]
+                if (query && ![image.alt, image.title, image.caption, image.src, image.path]
                     .filter(Boolean)
                     .some((value) => String(value).toLocaleLowerCase().includes(query))) {
                     return false;
