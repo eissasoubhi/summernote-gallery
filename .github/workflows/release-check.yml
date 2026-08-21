@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   package:
-    name: Validate npm release candidate
+    name: Validate tagged package source
     runs-on: ubuntu-latest
 
     steps:
@@ -34,6 +34,3 @@ jobs:
 
       - name: Inspect package contents
         run: npm pack --dry-run
-
-      - name: Build npm tarball
-        run: npm pack
