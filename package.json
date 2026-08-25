@@ -22,7 +22,7 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config vitest.config.ts",
-    "build:js": "vite build --config vite.config.ts",
+    "build:js": "vite build --config vite.config.ts && node scripts/create-browser-alias.mjs",
     "build:types": "tsc -p tsconfig.build.json",
     "build": "npm run build:js && npm run build:types",
     "pack:check": "node scripts/validate-package.mjs",
