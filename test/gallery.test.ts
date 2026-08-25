@@ -4,9 +4,9 @@ import {
   parseGallery,
   parseLegacyGallery,
   renderGallery,
-} from '../../src/v3/gallery';
+} from '../src/gallery';
 
-describe('Gallery v3 content contract', () => {
+describe('Gallery content contract', () => {
   it('round-trips semantic gallery content', () => {
     const node = renderGallery({ images: [{ id: 'mountain', src: '/mountain.jpg', alt: 'Mountain', title: 'Mountain', caption: 'Alpine view', width: 640, height: 480 }] });
 
@@ -22,9 +22,7 @@ describe('Gallery v3 content contract', () => {
     legacy.innerHTML = '<img src="/legacy.jpg" title="Legacy image" alt="Legacy alt">';
 
     expect(parseLegacyGallery(legacy)).toEqual({ images: [{ id: 'legacy-1', src: '/legacy.jpg', alt: 'Legacy alt', title: 'Legacy image' }] });
-
     const migrated = migrateLegacyGallery(legacy);
-    expect(migrated).not.toBeNull();
     expect(migrated?.getAttribute('data-snb-version')).toBe('3');
     expect(migrated?.hasAttribute('data-brickdata')).toBe(false);
     expect(migrated?.querySelector('figure img')?.getAttribute('data-snb-image-id')).toBe('legacy-1');
@@ -35,7 +33,6 @@ describe('Gallery v3 content contract', () => {
     const legacy = document.createElement('div');
     legacy.setAttribute('data-brickdata', '{bad-json');
     legacy.innerHTML = '<img src="/legacy.jpg" alt="Legacy">';
-
     expect(parseLegacyGallery(legacy)).toBeNull();
     expect(migrateLegacyGallery(legacy)).toBeNull();
     expect(legacy.getAttribute('data-brickdata')).toBe('{bad-json');
