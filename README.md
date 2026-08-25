@@ -4,7 +4,7 @@ Summernote Gallery is a standalone Summernote 0.9.x plugin for selecting images 
 
 ## v3 source status
 
-The public `master` branch contains the **3.0.0-rc.0 source/package contract**. Gallery v3 no longer depends on the historical URL/pagination configuration model or the old shared SNB runtime described by earlier documentation.
+The public `master` branch contains the **3.0.0-rc.1 source/package contract**. Gallery v3 no longer depends on the historical URL/pagination configuration model or the old shared SNB runtime described by earlier documentation.
 
 The maintained ecosystem compatibility matrix validates Gallery with Summernote 0.9.1 across BS3, BS4, BS5 and Lite builds under Chromium, Firefox and WebKit.
 
@@ -25,35 +25,16 @@ Package publication is separate from source readiness. Verify the registry versi
 - accessible search/status/error/listbox semantics;
 - clean semantic persisted HTML marked with `data-snb-brick="gallery"` and `data-snb-version="3"`;
 - explicit, opt-in helpers for migrating legacy Gallery markup;
-- ESM, CommonJS/browser bundle and TypeScript declarations.
-
-## Package contract
-
-The v3 root manifest exposes:
-
-```text
-dist/index.js          ESM
-dist/index.umd.cjs     CommonJS / browser bundle
-dist/types/index.d.ts  TypeScript declarations
-```
-
-Host peer dependencies:
-
-```json
-{
-  "jquery": ">=3.6.0 <4",
-  "summernote": ">=0.9.1 <0.10"
-}
-```
+- browser-friendly, ESM, CommonJS and TypeScript package artifacts.
 
 ## Browser usage
 
-Load jQuery, the Summernote build matching your Bootstrap/Lite setup, then the Gallery bundle before initializing the editor:
+For a normal script-tag integration, use the browser-friendly file. You do not need to know or use the CommonJS filename:
 
 ```html
 <script src="path/to/jquery.js"></script>
 <script src="path/to/summernote.js"></script>
-<script src="path/to/summernote-gallery/dist/index.umd.cjs"></script>
+<script src="path/to/summernote-gallery/dist/summernote-gallery.browser.js"></script>
 ```
 
 Configure a source adapter and add `summernoteGallery` to the toolbar:
@@ -101,7 +82,29 @@ $('#summernote').summernote({
 });
 ```
 
+Gallery works completely on its own. Install Summernote Bricks only if you want to group this button with Heading or other Summernote buttons inside one dropdown.
+
 For static data, the module API also exposes `createStaticGallerySource(images)`.
+
+## Package contract
+
+The package keeps separate artifacts for browsers and build tools:
+
+```text
+dist/summernote-gallery.browser.js  simple script-tag browser entrypoint
+dist/index.js                       ESM
+dist/index.umd.cjs                  CommonJS / compatibility bundle
+dist/types/index.d.ts               TypeScript declarations
+```
+
+Host peer dependencies:
+
+```json
+{
+  "jquery": ">=3.6.0 <4",
+  "summernote": ">=0.9.1 <0.10"
+}
+```
 
 ## Source adapter contract
 
@@ -220,10 +223,10 @@ The historical 0.8.18 demos, old `dist/snb-gallery-brick.min.js` path and URL/pa
 
 ## Ecosystem
 
-- `summernote-gallery` — this standalone backend-agnostic Gallery plugin;
-- `summernote-heading` — standalone semantic Heading plugin;
-- `summernote-bricks` — optional composer of registered plugin buttons and central browser compatibility harness;
-- `SNB-components` — independent optional shared core; Gallery does not currently depend on it.
+- [`summernote-gallery`](https://github.com/eissasoubhi/summernote-gallery) — this standalone backend-agnostic Gallery plugin;
+- [`summernote-heading`](https://github.com/eissasoubhi/summernote-heading) — standalone semantic Heading plugin;
+- [`summernote-bricks`](https://github.com/eissasoubhi/summernote-bricks) — optional composer that groups registered plugin buttons;
+- [`SNB-components`](https://github.com/eissasoubhi/SNB-components) — independent optional shared core; Gallery does not currently depend on it.
 
 See the Summernote Bricks roadmap issue #3 for ecosystem release-readiness status.
 
