@@ -5,9 +5,9 @@
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "noEmit": false,
-    "rootDir": "../src/v3",
-    "outDir": "../dist/types"
+    "rootDir": "src",
+    "outDir": "dist/types"
   },
-  "include": ["../src/v3/**/*.ts"],
-  "exclude": ["./tests", "./*.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["test", "*.ts"]
 }

@@ -1,6 +1,6 @@
 {
   "name": "summernote-gallery",
-  "version": "3.0.0-rc.0",
+  "version": "3.0.0-rc.1",
   "description": "Native Summernote gallery plugin with backend-agnostic image sources and semantic persisted HTML.",
   "type": "module",
   "main": "./dist/index.umd.cjs",
@@ -20,13 +20,13 @@
     "summernote": ">=0.9.1 <0.10"
   },
   "scripts": {
-    "typecheck": "tsc -p v3-tooling/tsconfig.json --noEmit",
-    "test": "vitest run --config v3-tooling/vitest.config.ts",
-    "build:js": "vite build --config v3-tooling/vite.config.ts",
-    "build:types": "tsc -p v3-tooling/tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --config vitest.config.ts",
+    "build:js": "vite build --config vite.config.ts",
+    "build:types": "tsc -p tsconfig.build.json",
     "build": "npm run build:js && npm run build:types",
-    "pack:check": "node v3-tooling/scripts/validate-root-package.mjs",
-    "release:tag-check": "node v3-tooling/scripts/validate-release-tag.mjs",
+    "pack:check": "node scripts/validate-package.mjs",
+    "release:tag-check": "node scripts/validate-release-tag.mjs",
     "check": "npm run typecheck && npm run test && npm run build && npm run pack:check"
   },
   "devDependencies": {
