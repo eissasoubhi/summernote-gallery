@@ -36,7 +36,7 @@
     "jsdom": "^26.1.0",
     "typescript": "^5.9.0",
     "vite": "^8.1.0",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.12"
   },
   "keywords": ["summernote", "summernote-plugin", "wysiwyg", "gallery", "image-gallery", "semantic-html"],
   "homepage": "https://eissasoubhi.github.io/summernote-gallery",
